@@ -1,0 +1,6 @@
+{
+  "name": "3D Developer Room & Interactive CV",
+  "description": "An interactive 3D developer room portfolio where clicking on objects zooms the camera and opens details, featuring a computer workstation with an interactive CV/Resume system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
