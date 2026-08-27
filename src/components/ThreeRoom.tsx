@@ -19,63 +19,78 @@ function createWin7MonitorTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
-  // 1. Windows 7 "Harmony" Desktop Wallpaper (Radial Blue Gradient)
-  const bgGrad = ctx.createRadialGradient(512, 280, 20, 512, 280, 550);
-  bgGrad.addColorStop(0, '#1d78be');
-  bgGrad.addColorStop(0.45, '#0d5392');
-  bgGrad.addColorStop(0.8, '#06315d');
-  bgGrad.addColorStop(1, '#031936');
+  // 1. Sleek Cybernetic / Dev Workspace Desktop Wallpaper
+  const bgGrad = ctx.createRadialGradient(512, 270, 20, 512, 270, 560);
+  bgGrad.addColorStop(0, '#0f2b48');
+  bgGrad.addColorStop(0.45, '#091c33');
+  bgGrad.addColorStop(0.8, '#040d1a');
+  bgGrad.addColorStop(1, '#02060c');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, 1024, 640);
 
-  // Light Rays / Aurora streaks
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  // High-Tech Matrix / Geometric Ray lines
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
   for (let i = 0; i < 6; i++) {
     ctx.beginPath();
-    ctx.moveTo(350 + i * 50, 0);
-    ctx.lineTo(550 + i * 70, 640);
-    ctx.lineTo(490 + i * 70, 640);
-    ctx.lineTo(290 + i * 50, 0);
+    ctx.moveTo(320 + i * 60, 0);
+    ctx.lineTo(540 + i * 80, 640);
+    ctx.lineTo(470 + i * 80, 640);
+    ctx.lineTo(250 + i * 60, 0);
     ctx.fill();
   }
 
-  // 2. Central Glowing Windows 7 Flag Logo
-  const drawWinPane = (x: number, y: number, w: number, h: number, c1: string, c2: string) => {
-    if (!ctx) return;
-    const g = ctx.createLinearGradient(x, y, x + w, y + h);
-    g.addColorStop(0, c1);
-    g.addColorStop(1, c2);
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 6);
-    ctx.fill();
-  };
-
+  // 2. Central Custom Developer "DevOS" Nexus Logo Emblem
   const cx = 512;
-  const cy = 250;
-  // Glow aura
-  const aura = ctx.createRadialGradient(cx, cy, 10, cx, cy, 140);
-  aura.addColorStop(0, 'rgba(120, 210, 255, 0.45)');
-  aura.addColorStop(1, 'rgba(10, 60, 120, 0)');
+  const cy = 245;
+
+  // Luminous blue/cyan aura
+  const aura = ctx.createRadialGradient(cx, cy, 10, cx, cy, 145);
+  aura.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+  aura.addColorStop(0.6, 'rgba(14, 116, 144, 0.15)');
+  aura.addColorStop(1, 'rgba(2, 6, 12, 0)');
   ctx.fillStyle = aura;
   ctx.beginPath();
-  ctx.arc(cx, cy, 140, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 145, 0, Math.PI * 2);
   ctx.fill();
 
-  // 4 Panes of Windows 7
-  drawWinPane(cx - 65, cy - 65, 58, 58, '#ff5544', '#cf2211'); // Red
-  drawWinPane(cx + 8, cy - 65, 58, 58, '#70d635', '#3f9914');  // Green
-  drawWinPane(cx - 65, cy + 8, 58, 58, '#3ca4ff', '#0769c5');  // Blue
-  drawWinPane(cx + 8, cy + 8, 58, 58, '#ffd642', '#f59e0b');   // Yellow
+  // Central Geometric Hexagon Tech Shield
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.beginPath();
+  const hexRadius = 55;
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i - Math.PI / 6;
+    const hx = hexRadius * Math.cos(angle);
+    const hy = hexRadius * Math.sin(angle);
+    if (i === 0) ctx.moveTo(hx, hy);
+    else ctx.lineTo(hx, hy);
+  }
+  ctx.closePath();
+  const hexGrad = ctx.createLinearGradient(-50, -50, 50, 50);
+  hexGrad.addColorStop(0, 'rgba(14, 165, 233, 0.35)');
+  hexGrad.addColorStop(1, 'rgba(16, 185, 129, 0.2)');
+  ctx.fillStyle = hexGrad;
+  ctx.fill();
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
 
-  // Windows 7 Text
+  // Code brackets symbol </ > in center
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 36px "JetBrains Mono", monospace';
+  ctx.fillText('</>', 0, 0);
+  ctx.restore();
+
+  // DevOS Typography
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffffff';
-  ctx.font = '300 28px "Segoe UI", sans-serif';
-  ctx.fillText('Windows 7', cx, cy + 110);
-  ctx.fillStyle = 'rgba(200, 230, 255, 0.7)';
-  ctx.font = '600 13px "Segoe UI", sans-serif';
-  ctx.fillText('PROFESSIONAL EDITION • NGUYEN VAN NHAN', cx, cy + 132);
+  ctx.font = '700 28px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('DevOS', cx, cy + 105);
+  ctx.fillStyle = 'rgba(147, 197, 253, 0.85)';
+  ctx.font = '600 12px "JetBrains Mono", monospace';
+  ctx.fillText('WORKSTATION • NGUYEN VAN NHAN', cx, cy + 128);
 
   // 3. Desktop Shortcut Icon: Resume.pdf
   ctx.textAlign = 'left';
@@ -83,11 +98,11 @@ function createWin7MonitorTexture(): THREE.CanvasTexture {
   const iconY = 60;
 
   // Icon highlight box
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
   ctx.beginPath();
   ctx.roundRect(iconX - 10, iconY - 10, 110, 125, 6);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
@@ -129,47 +144,45 @@ function createWin7MonitorTexture(): THREE.CanvasTexture {
   ctx.font = 'bold 13px "Segoe UI", sans-serif';
   ctx.fillText('Resume', iconX + 22, iconY + 92);
 
-  // 4. Windows 7 Aero Glass Taskbar at Bottom
+  // 4. Sleek Modern Taskbar at Bottom
   const tbGrad = ctx.createLinearGradient(0, 585, 0, 640);
-  tbGrad.addColorStop(0, 'rgba(50, 115, 175, 0.75)');
-  tbGrad.addColorStop(0.5, 'rgba(15, 55, 95, 0.92)');
-  tbGrad.addColorStop(1, 'rgba(5, 20, 45, 0.98)');
+  tbGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+  tbGrad.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
   ctx.fillStyle = tbGrad;
   ctx.fillRect(0, 585, 1024, 55);
 
-  // Top taskbar glass highlight
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  // Top taskbar line highlight
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
   ctx.fillRect(0, 585, 1024, 1.5);
 
-  // Windows 7 Start Orb (Left corner)
-  const orbGrad = ctx.createRadialGradient(28, 595, 3, 28, 605, 24);
-  orbGrad.addColorStop(0, '#56b6f5');
-  orbGrad.addColorStop(0.6, '#1773b8');
-  orbGrad.addColorStop(1, '#063b6a');
+  // Custom Start Orb (Glowing Cyan-Emerald Code Button)
+  const orbGrad = ctx.createRadialGradient(32, 608, 2, 32, 608, 22);
+  orbGrad.addColorStop(0, '#38bdf8');
+  orbGrad.addColorStop(0.7, '#0284c7');
+  orbGrad.addColorStop(1, '#0369a1');
   ctx.fillStyle = orbGrad;
   ctx.beginPath();
-  ctx.arc(32, 608, 24, 0, Math.PI * 2);
+  ctx.arc(32, 608, 22, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Mini flag inside orb
-  ctx.fillStyle = '#ff4d4d';
-  ctx.fillRect(23, 598, 7, 7);
-  ctx.fillStyle = '#4ade80';
-  ctx.fillRect(32, 598, 7, 7);
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillRect(23, 607, 7, 7);
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(32, 607, 7, 7);
+  // Code symbol inside orb
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 16px "JetBrains Mono", monospace';
+  ctx.fillText('</>', 32, 609);
 
   // Taskbar Pinned App: Resume Button
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
   ctx.beginPath();
   ctx.roundRect(70, 590, 150, 42, 6);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
   ctx.stroke();
 
   ctx.fillStyle = '#e11d48';
@@ -1140,7 +1153,7 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
         >
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/90 text-white backdrop-blur-md border border-sky-400/40 shadow-xl shadow-black/80 text-xs font-semibold animate-fadeIn">
             <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
-            <span className="text-sky-200">🖥️ Windows 7 PC • Click to open</span>
+            <span className="text-sky-200">🖥️ Developer PC • Click to open</span>
           </div>
         </div>
       )}

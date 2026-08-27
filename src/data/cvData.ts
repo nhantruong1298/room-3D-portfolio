@@ -188,11 +188,11 @@ export const DEFAULT_CV_DATA: CVData = {
   ],
 };
 
-// Default Isometric Overview Camera for Anime Cozy Room
+// Default Isometric Overview Camera for Anime Cozy Room (Zoomed out slightly for spacious view)
 export const ROOM_STATIC_CAMERA = {
-  position: [4.6, 3.8, 4.6] as [number, number, number],
-  target: [0, 0.7, 0] as [number, number, number],
-  fov: 36,
+  position: [5.4, 4.3, 5.4] as [number, number, number],
+  target: [0, 0.65, 0] as [number, number, number],
+  fov: 37,
 };
 
 export const ROOM_OBJECTS_CONFIG: RoomObjectInfo[] = [
@@ -200,7 +200,7 @@ export const ROOM_OBJECTS_CONFIG: RoomObjectInfo[] = [
     id: 'computer',
     name: 'Workstation Monitor',
     vietnameseName: 'Computer Monitor & CV',
-    shortDesc: 'Open the computer to explore the interactive Windows 7 desktop and resume',
+    shortDesc: 'Open the computer to explore the interactive desktop and resume',
     category: 'Workstation',
     badge: 'MAIN / IT CV',
     camera: {
@@ -211,7 +211,7 @@ export const ROOM_OBJECTS_CONFIG: RoomObjectInfo[] = [
     details: {
       title: 'Developer PC Workstation',
       subtitle: 'Explore Developer Profile, Experience, Projects & Resume',
-      description: 'Main workstation monitor. Click to launch the Windows 7 desktop with direct resume access.',
+      description: 'Main workstation monitor. Click to launch the virtual desktop with direct resume access.',
       highlights: [
         '📄 Resume: Direct access to online resume',
         '💼 Experience: Engineering background & history',

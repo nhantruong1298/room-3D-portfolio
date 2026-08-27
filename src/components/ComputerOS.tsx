@@ -52,98 +52,104 @@ export const ComputerOS: React.FC<ComputerOSProps> = ({ onBackToRoom }) => {
 
   return (
     <div
-      id="windows7-desktop-container"
+      id="devos-desktop-container"
       className="absolute inset-0 z-40 flex flex-col justify-between overflow-hidden animate-fadeIn select-none font-sans"
       onClick={() => {
         if (isStartMenuOpen) setIsStartMenuOpen(false);
       }}
       style={{
-        background: `radial-gradient(ellipse at 50% 35%, #1872b8 0%, #0c4d87 40%, #062b54 75%, #03152c 100%)`,
+        background: `radial-gradient(ellipse at 50% 35%, #0d2844 0%, #081a2e 45%, #040e1b 75%, #02060d 100%)`,
       }}
     >
       {/* ========================================================= */}
-      {/* 1. AUTHENTIC WINDOWS 7 "HARMONY" WALLPAPER BACKGROUND */}
+      {/* 1. SLEEK DEVELOPER WORKSPACE WALLPAPER BACKGROUND */}
       {/* ========================================================= */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Glowing radial light burst behind the Windows logo */}
+        {/* Glowing radial light burst behind the Dev logo */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[550px] opacity-70"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[550px] opacity-70"
           style={{
             background:
-              'radial-gradient(circle, rgba(120, 200, 255, 0.45) 0%, rgba(20, 110, 190, 0.2) 50%, transparent 75%)',
+              'radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(14, 116, 144, 0.15) 50%, transparent 75%)',
           }}
         />
 
-        {/* Diagonal Aero Light Streaks / Rays */}
+        {/* Diagonal Tech Grid / Light Rays */}
         <div
-          className="absolute inset-0 opacity-25"
+          className="absolute inset-0 opacity-20"
           style={{
             background:
-              'repeating-linear-gradient(65deg, transparent, transparent 80px, rgba(255,255,255,0.08) 80px, rgba(255,255,255,0.08) 120px)',
+              'repeating-linear-gradient(65deg, transparent, transparent 80px, rgba(56,189,248,0.1) 80px, rgba(56,189,248,0.1) 120px)',
           }}
         />
 
-        {/* Central Iconic 4-Color Windows 7 Logo Emblem */}
+        {/* Central Developer Emblem */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] flex flex-col items-center pointer-events-none select-none opacity-90">
-          <div className="relative w-44 h-44 drop-shadow-[0_15px_35px_rgba(0,0,0,0.6)]">
+          <div className="relative w-44 h-44 drop-shadow-[0_15px_35px_rgba(0,0,0,0.6)] flex items-center justify-center">
             <svg
               viewBox="0 0 200 200"
-              className="w-full h-full filter drop-shadow-[0_0_20px_rgba(56,189,248,0.4)]"
+              className="w-full h-full filter drop-shadow-[0_0_25px_rgba(56,189,248,0.5)]"
             >
               <defs>
-                <linearGradient id="winRed" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#ff5f45" />
-                  <stop offset="100%" stopColor="#cf2613" />
+                <linearGradient id="devCyanGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#38bdf8" />
+                  <stop offset="100%" stopColor="#0284c7" />
                 </linearGradient>
-                <linearGradient id="winGreen" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#76d83a" />
-                  <stop offset="100%" stopColor="#439b16" />
-                </linearGradient>
-                <linearGradient id="winBlue" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#3da6ff" />
-                  <stop offset="100%" stopColor="#086bc7" />
-                </linearGradient>
-                <linearGradient id="winYellow" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#ffd845" />
-                  <stop offset="100%" stopColor="#f59e0b" />
+                <linearGradient id="devEmeraldGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#34d399" />
+                  <stop offset="100%" stopColor="#059669" />
                 </linearGradient>
               </defs>
 
-              {/* Red Pane (Top-Left) */}
-              <path
-                d="M 35,45 Q 65,30 95,45 L 95,95 Q 65,80 35,95 Z"
-                fill="url(#winRed)"
-                opacity="0.95"
+              {/* Glowing Outer Hexagon */}
+              <polygon
+                points="100,20 170,60 170,140 100,180 30,140 30,60"
+                fill="rgba(14, 165, 233, 0.15)"
+                stroke="url(#devCyanGrad)"
+                strokeWidth="3.5"
+                strokeLinejoin="round"
               />
-              {/* Green Pane (Top-Right) */}
-              <path
-                d="M 105,45 Q 135,30 165,45 L 165,95 Q 135,80 105,95 Z"
-                fill="url(#winGreen)"
-                opacity="0.95"
+
+              {/* Inner Accent Hexagon */}
+              <polygon
+                points="100,35 155,67 155,133 100,165 45,133 45,67"
+                fill="none"
+                stroke="rgba(52, 211, 153, 0.4)"
+                strokeWidth="1.5"
+                strokeDasharray="6 4"
               />
-              {/* Blue Pane (Bottom-Left) */}
+
+              {/* Stylized Code Brackets */}
               <path
-                d="M 35,105 Q 65,90 95,105 L 95,155 Q 65,140 35,155 Z"
-                fill="url(#winBlue)"
-                opacity="0.95"
+                d="M 80,75 L 55,100 L 80,125"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-              {/* Yellow Pane (Bottom-Right) */}
               <path
-                d="M 105,105 Q 135,90 165,105 L 165,155 Q 135,140 105,155 Z"
-                fill="url(#winYellow)"
-                opacity="0.95"
+                d="M 120,75 L 145,100 L 120,125"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M 108,70 L 92,130"
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="4"
+                strokeLinecap="round"
               />
             </svg>
           </div>
 
-          {/* Windows 7 Text Branding */}
+          {/* DevOS Text Branding */}
           <div className="mt-2 text-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-            <h1 className="text-2xl font-light tracking-wide font-sans text-sky-100 flex items-center gap-2">
-              <span className="font-semibold">Windows</span>
-              <span className="text-amber-400 font-bold text-3xl">7</span>
-            </h1>
-            <p className="text-[11px] uppercase tracking-[0.3em] text-sky-200/70 font-semibold mt-0.5">
-              Professional Edition
+            <p className="text-[11px] uppercase tracking-[0.25em] text-sky-200/80 font-mono mt-0.5 font-semibold">
+              WORKSTATION
             </p>
           </div>
         </div>
@@ -226,9 +232,9 @@ export const ComputerOS: React.FC<ComputerOSProps> = ({ onBackToRoom }) => {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white leading-tight">
-                  Nguyen Van Nhan
+                  Truong Trong Nhan
                 </h3>
-                <p className="text-[11px] text-sky-300">Senior Full Stack Developer</p>
+                <p className="text-[11px] text-sky-300">Mobile Developer</p>
               </div>
             </div>
           </div>
@@ -296,9 +302,9 @@ export const ComputerOS: React.FC<ComputerOSProps> = ({ onBackToRoom }) => {
       >
         {/* Left Side: Windows 7 Start Orb + Pinned Taskbar Apps */}
         <div className="flex items-center h-full">
-          {/* Authentic Glowing Windows 7 Start Orb */}
+          {/* Glowing DevOS Start Orb */}
           <button
-            id="win7-start-orb"
+            id="devos-start-orb"
             onClick={(e) => {
               e.stopPropagation();
               playSound('click');
@@ -307,20 +313,17 @@ export const ComputerOS: React.FC<ComputerOSProps> = ({ onBackToRoom }) => {
             className="group relative -top-1 ml-1.5 w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 focus:outline-none"
             style={{
               background:
-                'radial-gradient(circle at 35% 30%, #56b2f0 0%, #1771b6 55%, #053b68 100%)',
+                'radial-gradient(circle at 35% 30%, #38bdf8 0%, #0284c7 55%, #0369a1 100%)',
               boxShadow:
-                '0 0 10px rgba(56, 189, 248, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.8), inset 0 -2px 4px rgba(0, 0, 0, 0.6)',
-              border: '1.5px solid rgba(255, 255, 255, 0.7)',
+                '0 0 12px rgba(56, 189, 248, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.8), inset 0 -2px 4px rgba(0, 0, 0, 0.6)',
+              border: '1.5px solid rgba(255, 255, 255, 0.8)',
             }}
-            title="Start"
+            title="DevOS Menu"
           >
-            {/* 4-Color Windows Flag inside Start Orb */}
-            <svg viewBox="0 0 100 100" className="w-6 h-6 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              <path d="M 18,22 Q 35,12 52,22 L 52,50 Q 35,40 18,50 Z" fill="#ff4d4d" />
-              <path d="M 58,22 Q 75,12 92,22 L 92,50 Q 75,40 58,50 Z" fill="#48d035" />
-              <path d="M 18,56 Q 35,46 52,56 L 52,84 Q 35,74 18,84 Z" fill="#2d9cdb" />
-              <path d="M 58,56 Q 75,46 92,56 L 92,84 Q 75,74 58,84 Z" fill="#ffc83b" />
-            </svg>
+            {/* Custom Code Brackets inside Start Orb */}
+            <span className="text-white font-mono font-bold text-xs tracking-tighter drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+              &lt;/&gt;
+            </span>
           </button>
 
           {/* Quick Launch / Pinned Taskbar Items */}
