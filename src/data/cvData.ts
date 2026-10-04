@@ -204,8 +204,8 @@ export const ROOM_OBJECTS_CONFIG: RoomObjectInfo[] = [
     category: 'Workstation',
     badge: 'MAIN / IT CV',
     camera: {
-      position: [0, 1.25, 0.9],
-      target: [0, 1.15, -0.4],
+      position: [0.85, 1.25, -0.06],
+      target: [0.85, 1.15, -1.36],
       fov: 30,
     },
     details: {

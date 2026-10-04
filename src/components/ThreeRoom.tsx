@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomObjectId } from '../types';
 import { ROOM_OBJECTS_CONFIG, ROOM_STATIC_CAMERA } from '../data/cvData';
 import { playSound } from '../utils/audio';
@@ -244,40 +245,186 @@ function createTumblerTexture(): THREE.CanvasTexture {
   return new THREE.CanvasTexture(canvas);
 }
 
-// Outside anime sky texture
-function createAnimeSkyTexture(): THREE.CanvasTexture {
+// Outside winter sky texture with falling snow (call update() every frame)
+function createWinterSkyTexture(): { texture: THREE.CanvasTexture; update: (t: number) => void } {
+  const SIZE = 512;
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = SIZE;
+  canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return new THREE.CanvasTexture(canvas);
+  const texture = new THREE.CanvasTexture(canvas);
+  if (!ctx) return { texture, update: () => {} };
 
-  // Sunny anime sky gradient (Cyan to warm golden horizon)
-  const grad = ctx.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, '#38bdf8');
-  grad.addColorStop(0.65, '#93c5fd');
-  grad.addColorStop(0.88, '#fed7aa');
-  grad.addColorStop(1, '#ffedd5');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 512, 512);
+  // Static background drawn once to an offscreen canvas
+  const bg = document.createElement('canvas');
+  bg.width = SIZE;
+  bg.height = SIZE;
+  const bgCtx = bg.getContext('2d');
+  if (bgCtx) {
+    // Overcast winter sky gradient (cool grey-blue to pale horizon)
+    const grad = bgCtx.createLinearGradient(0, 0, 0, SIZE);
+    grad.addColorStop(0, '#94a3b8');
+    grad.addColorStop(0.55, '#cbd5e1');
+    grad.addColorStop(0.8, '#e2e8f0');
+    grad.addColorStop(1, '#f1f5f9');
+    bgCtx.fillStyle = grad;
+    bgCtx.fillRect(0, 0, SIZE, SIZE);
 
-  // Fluffy Anime Clouds
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-  function drawCloud(cx: number, cy: number, r: number) {
-    if (!ctx) return;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.arc(cx + r * 0.7, cy - r * 0.2, r * 0.8, 0, Math.PI * 2);
-    ctx.arc(cx + r * 1.3, cy + r * 0.1, r * 0.75, 0, Math.PI * 2);
-    ctx.arc(cx + r * 0.5, cy + r * 0.4, r * 0.9, 0, Math.PI * 2);
-    ctx.fill();
+    // Pale winter sun behind the clouds
+    const sun = bgCtx.createRadialGradient(380, 140, 0, 380, 140, 70);
+    sun.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+    sun.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    bgCtx.fillStyle = sun;
+    bgCtx.fillRect(0, 0, SIZE, SIZE);
+
+    // Soft grey snow clouds
+    const drawCloud = (cx: number, cy: number, r: number) => {
+      bgCtx.beginPath();
+      bgCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      bgCtx.arc(cx + r * 0.7, cy - r * 0.2, r * 0.8, 0, Math.PI * 2);
+      bgCtx.arc(cx + r * 1.3, cy + r * 0.1, r * 0.75, 0, Math.PI * 2);
+      bgCtx.arc(cx + r * 0.5, cy + r * 0.4, r * 0.9, 0, Math.PI * 2);
+      bgCtx.fill();
+    };
+    bgCtx.fillStyle = 'rgba(241, 245, 249, 0.75)';
+    drawCloud(60, 90, 50);
+    drawCloud(300, 60, 60);
+    drawCloud(180, 170, 40);
+
+    // Distant snowy hills
+    bgCtx.fillStyle = '#e2e8f0';
+    bgCtx.beginPath();
+    bgCtx.moveTo(0, 400);
+    bgCtx.quadraticCurveTo(130, 330, 260, 390);
+    bgCtx.quadraticCurveTo(390, 340, SIZE, 380);
+    bgCtx.lineTo(SIZE, SIZE);
+    bgCtx.lineTo(0, SIZE);
+    bgCtx.fill();
+
+    // Snow-covered pine trees
+    const drawPine = (x: number, baseY: number, h: number) => {
+      bgCtx.fillStyle = '#334155';
+      bgCtx.fillRect(x - h * 0.04, baseY - h * 0.12, h * 0.08, h * 0.12);
+      for (let i = 0; i < 3; i++) {
+        const tierY = baseY - h * 0.12 - i * h * 0.26;
+        const w = h * (0.42 - i * 0.1);
+        bgCtx.fillStyle = '#1e3a3a';
+        bgCtx.beginPath();
+        bgCtx.moveTo(x - w, tierY);
+        bgCtx.lineTo(x, tierY - h * 0.38);
+        bgCtx.lineTo(x + w, tierY);
+        bgCtx.fill();
+        // Snow cap on each tier
+        bgCtx.fillStyle = '#f8fafc';
+        bgCtx.beginPath();
+        bgCtx.moveTo(x - w * 0.45, tierY - h * 0.2);
+        bgCtx.lineTo(x, tierY - h * 0.38);
+        bgCtx.lineTo(x + w * 0.45, tierY - h * 0.2);
+        bgCtx.fill();
+      }
+    };
+    drawPine(70, 440, 120);
+    drawPine(150, 430, 90);
+    drawPine(420, 445, 130);
+    drawPine(480, 425, 80);
+
+    // Snowy ground in front
+    bgCtx.fillStyle = '#f8fafc';
+    bgCtx.beginPath();
+    bgCtx.moveTo(0, 440);
+    bgCtx.quadraticCurveTo(256, 410, SIZE, 445);
+    bgCtx.lineTo(SIZE, SIZE);
+    bgCtx.lineTo(0, SIZE);
+    bgCtx.fill();
   }
 
-  drawCloud(120, 200, 45);
-  drawCloud(340, 280, 55);
-  drawCloud(80, 360, 35);
+  // Falling snowflakes
+  const flakes = Array.from({ length: 140 }, () => ({
+    x: Math.random() * SIZE,
+    y: Math.random() * SIZE,
+    r: 0.8 + Math.random() * 2.2,
+    speed: 18 + Math.random() * 30,
+    drift: Math.random() * Math.PI * 2,
+  }));
 
-  return new THREE.CanvasTexture(canvas);
+  let lastT = 0;
+  const update = (t: number) => {
+    const dt = Math.min(t - lastT, 0.1);
+    lastT = t;
+    ctx.drawImage(bg, 0, 0);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    for (const f of flakes) {
+      f.y += f.speed * f.r * 0.5 * dt;
+      if (f.y > SIZE + 4) {
+        f.y = -4;
+        f.x = Math.random() * SIZE;
+      }
+      const x = (f.x + Math.sin(t * 0.8 + f.drift) * 6 + SIZE) % SIZE;
+      ctx.beginPath();
+      ctx.arc(x, f.y, f.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    texture.needsUpdate = true;
+  };
+  update(0);
+
+  return { texture, update };
+}
+
+// Christmas wallpaper: warm cream with soft red stripes, gold stars and snowflakes
+function createChristmasWallpaperTexture(): THREE.CanvasTexture {
+  const SIZE = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+  const texture = new THREE.CanvasTexture(canvas);
+  if (!ctx) return texture;
+
+  ctx.fillStyle = '#fbf3e4';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // Soft vertical red stripes
+  ctx.fillStyle = 'rgba(185, 28, 28, 0.12)';
+  ctx.fillRect(0, 0, 18, SIZE);
+  ctx.fillRect(128, 0, 18, SIZE);
+
+  // Small gold stars
+  const drawStar = (cx: number, cy: number, r: number) => {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const rad = i % 2 === 0 ? r : r * 0.45;
+      const a = (Math.PI / 5) * i - Math.PI / 2;
+      ctx.lineTo(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad);
+    }
+    ctx.closePath();
+    ctx.fill();
+  };
+  ctx.fillStyle = '#d4a017';
+  drawStar(73, 64, 9);
+  drawStar(201, 192, 9);
+
+  // Small green snowflakes
+  const drawSnowflake = (cx: number, cy: number, r: number) => {
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const a = (Math.PI / 3) * i;
+      ctx.moveTo(cx - Math.cos(a) * r, cy - Math.sin(a) * r);
+      ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    }
+    ctx.stroke();
+  };
+  ctx.strokeStyle = 'rgba(21, 128, 61, 0.55)';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  drawSnowflake(201, 64, 9);
+  drawSnowflake(73, 192, 9);
+
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(5, 4);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 export const ThreeRoom: React.FC<ThreeRoomProps> = ({
@@ -365,8 +512,8 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.4);
     scene.add(ambientLight);
 
-    // Warm Sun streaming directly through the Window
-    const sunLight = new THREE.DirectionalLight(0xffeed6, 2.6);
+    // Cool winter daylight streaming through the Window
+    const sunLight = new THREE.DirectionalLight(0xe0ecff, 2.0);
     sunLight.position.set(2.8, 4.5, -4.5);
     sunLight.target.position.set(0, 0.5, 0);
     sunLight.castShadow = true;
@@ -389,12 +536,12 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
 
     // Monitor soft cyan underglow LED
     const monitorGlow = new THREE.PointLight(0x38bdf8, 2.2, 3.2);
-    monitorGlow.position.set(0, 1.1, -0.2);
+    monitorGlow.position.set(0.85, 1.1, -1.16);
     scene.add(monitorGlow);
 
     // Warm desk lamp glow
     const deskLampGlow = new THREE.PointLight(0xfef08a, 1.5, 2.0);
-    deskLampGlow.position.set(0.9, 1.25, -0.3);
+    deskLampGlow.position.set(0.11, 1.12, -1.62); // just below the desk lamp bulb
     scene.add(deskLampGlow);
 
     // 6. Materials (Aesthetic Anime Palette)
@@ -405,7 +552,7 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     });
 
     const wallPastelMat = new THREE.MeshStandardMaterial({
-      color: 0xfdfbf7, // soft warm cream anime wall
+      map: createChristmasWallpaperTexture(), // Christmas wallpaper
       roughness: 0.85,
     });
 
@@ -458,8 +605,9 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
       roughness: 0.5,
     });
 
+    const winterSky = createWinterSkyTexture();
     const windowGlassMat = new THREE.MeshBasicMaterial({
-      map: createAnimeSkyTexture(),
+      map: winterSky.texture,
     });
 
     const curtainMat = new THREE.MeshStandardMaterial({
@@ -516,12 +664,202 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     trimL.position.set(-2.21, 0.07, 0);
     roomGroup.add(trimL);
 
+    // ==========================================
+    // CHRISTMAS WALL DECOR: PINE-GREEN WAINSCOTING, TWINKLING GARLAND & WREATH
+    // ==========================================
+    const WAINSCOT_H = 0.9;
+    const wainscotMat = new THREE.MeshStandardMaterial({ color: 0x1f4d3a, roughness: 0.7 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.35, metalness: 0.6 });
+
+    const wainscotBack = new THREE.Mesh(new THREE.BoxGeometry(4.45, WAINSCOT_H, 0.015), wainscotMat);
+    wainscotBack.position.set(0.075, WAINSCOT_H / 2, -2.217);
+    wainscotBack.receiveShadow = true;
+    roomGroup.add(wainscotBack);
+
+    const wainscotLeft = new THREE.Mesh(new THREE.BoxGeometry(0.015, WAINSCOT_H, 4.45), wainscotMat);
+    wainscotLeft.position.set(-2.217, WAINSCOT_H / 2, 0.075);
+    wainscotLeft.receiveShadow = true;
+    roomGroup.add(wainscotLeft);
+
+    // Gold chair rail on top of the wainscoting
+    const railBack = new THREE.Mesh(new THREE.BoxGeometry(4.45, 0.035, 0.03), goldMat);
+    railBack.position.set(0.075, WAINSCOT_H, -2.21);
+    roomGroup.add(railBack);
+
+    const railLeft = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.035, 4.45), goldMat);
+    railLeft.position.set(-2.21, WAINSCOT_H, 0.075);
+    roomGroup.add(railLeft);
+
+    // Pine garland with twinkling string lights along the top of both walls
+    const garlandMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.9 });
+    const bulbColors = [0xef4444, 0x22c55e, 0xfacc15, 0x3b82f6];
+    const twinkleBulbs: { mat: THREE.MeshStandardMaterial; phase: number }[] = [];
+
+    const addGarland = (from: THREE.Vector3, to: THREE.Vector3, sag: number, swags: number) => {
+      const points: THREE.Vector3[] = [];
+      const SEGMENTS = swags * 16;
+      for (let i = 0; i <= SEGMENTS; i++) {
+        const t = i / SEGMENTS;
+        const p = from.clone().lerp(to, t);
+        p.y -= Math.abs(Math.sin(t * swags * Math.PI)) * sag;
+        points.push(p);
+      }
+      const curve = new THREE.CatmullRomCurve3(points);
+      const garland = new THREE.Mesh(new THREE.TubeGeometry(curve, SEGMENTS * 2, 0.035, 8, false), garlandMat);
+      garland.castShadow = true;
+      roomGroup.add(garland);
+
+      const BULBS = swags * 6;
+      for (let i = 0; i <= BULBS; i++) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: bulbColors[i % bulbColors.length],
+          emissive: bulbColors[i % bulbColors.length],
+          emissiveIntensity: 1,
+          roughness: 0.3,
+        });
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), mat);
+        bulb.position.copy(curve.getPointAt(i / BULBS));
+        bulb.position.y -= 0.035;
+        roomGroup.add(bulb);
+        twinkleBulbs.push({ mat, phase: Math.random() * Math.PI * 2 });
+      }
+    };
+
+    addGarland(new THREE.Vector3(-2.17, 3.2, -2.17), new THREE.Vector3(2.3, 3.2, -2.17), 0.12, 5);
+    addGarland(new THREE.Vector3(-2.17, 3.2, -2.17), new THREE.Vector3(-2.17, 3.2, 2.3), 0.12, 5);
+
+    // Christmas wreath on the left wall above the aquarium
+    const wreathGroup = new THREE.Group();
+    wreathGroup.position.set(-2.19, 2.15, 0.55);
+    wreathGroup.rotation.y = Math.PI / 2;
+
+    const wreath = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.065, 12, 32), garlandMat);
+    wreath.castShadow = true;
+    wreathGroup.add(wreath);
+
+    // Red berries scattered around the wreath
+    const berryMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + 0.2;
+      const berry = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), berryMat);
+      berry.position.set(Math.cos(a) * 0.2, Math.sin(a) * 0.2, 0.06);
+      wreathGroup.add(berry);
+    }
+
+    // Red ribbon bow at the bottom
+    const bowMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.5 });
+    for (const side of [-1, 1]) {
+      const loop = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.1, 12), bowMat);
+      loop.rotation.z = side * Math.PI / 2;
+      loop.position.set(side * 0.05, -0.2, 0.07);
+      wreathGroup.add(loop);
+    }
+    const knot = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 10), bowMat);
+    knot.position.set(0, -0.2, 0.08);
+    wreathGroup.add(knot);
+    roomGroup.add(wreathGroup);
+
+    // ==========================================
+    // CHRISTMAS TREE (GLB MODEL) IN THE BACK-LEFT CORNER
+    // ==========================================
+    // The GLB has geometry only (no materials/UVs), so it is colored per vertex:
+    // red tree skirt, brown trunk, gold star, pine-green foliage with light snow on top.
+    new GLTFLoader().load('models/christmas_tree.glb', (gltf) => {
+      const TREE_HEIGHT = 2.0;
+      const treeRoot = gltf.scene;
+
+      const box = new THREE.Box3().setFromObject(treeRoot);
+      const size = box.getSize(new THREE.Vector3());
+      const scale = TREE_HEIGHT / size.y;
+      treeRoot.scale.setScalar(scale);
+      treeRoot.position.set(-1.37, -box.min.y * scale, -1.37);
+
+      const snow = new THREE.Color(0xe6eef2);
+      const skirt = new THREE.Color(0xa11d2b);
+      const trunk = new THREE.Color(0x5b3a1e);
+      const star = new THREE.Color(0xf5c518);
+      const leafDark = new THREE.Color(0x0f3d24);
+      const leafLight = new THREE.Color(0x1f7a45);
+      const ornamentCandidates: { pos: THREE.Vector3; normal: THREE.Vector3 }[] = [];
+
+      treeRoot.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const geo = mesh.geometry;
+        geo.computeVertexNormals();
+
+        const pos = geo.attributes.position;
+        const nrm = geo.attributes.normal;
+        const colors = new Float32Array(pos.count * 3);
+        const c = new THREE.Color();
+        const { min, max } = box;
+        const h = max.y - min.y;
+
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          const z = pos.getZ(i);
+          const t = (y - min.y) / h; // 0 = bottom, 1 = top
+          const r = Math.hypot(x, z);
+          const ny = nrm.getY(i);
+
+          if (t < 0.06) c.copy(skirt); // red tree skirt on the base
+          else if (t < 0.15 && r < 0.15 * h) c.copy(trunk);
+          else if (t > 0.83) c.copy(star);
+          else if (ny > 0.85) c.copy(snow).lerp(leafLight, 0.15); // light snow on branch tops
+          else {
+            // Darker green at the bottom, fresher green toward the top
+            c.copy(leafDark).lerp(leafLight, 0.35 + t * 0.5 + (Math.random() - 0.5) * 0.15);
+            // Outward-facing foliage spots are candidates for ornaments
+            if (t > 0.2 && t < 0.78 && Math.abs(ny) < 0.4 && i % 23 === 0) {
+              ornamentCandidates.push({
+                pos: new THREE.Vector3(x, y, z),
+                normal: new THREE.Vector3(nrm.getX(i), ny, nrm.getZ(i)),
+              });
+            }
+          }
+          colors.set([c.r, c.g, c.b], i * 3);
+        }
+        geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        mesh.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 });
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      });
+
+      // Twinkling baubles placed on the outer foliage
+      // Classic red / gold / silver palette for the baubles
+      const baubleColors = [0xc81e3a, 0xe0a82e, 0xd8dde3, 0xc81e3a, 0xe0a82e];
+      const ORNAMENTS = 36;
+      for (let k = 0; k < ORNAMENTS && ornamentCandidates.length > 0; k++) {
+        const pick = ornamentCandidates.splice(Math.floor(Math.random() * ornamentCandidates.length), 1)[0];
+        const color = baubleColors[k % baubleColors.length];
+        const mat = new THREE.MeshStandardMaterial({
+          color,
+          emissive: color,
+          emissiveIntensity: 0.4,
+          roughness: 0.2,
+          metalness: 0.5,
+        });
+        const bauble = new THREE.Mesh(new THREE.SphereGeometry(0.04 / scale, 14, 14), mat);
+        bauble.position.copy(pick.pos).addScaledVector(pick.normal, 0.02 / scale);
+        treeRoot.add(bauble);
+        twinkleBulbs.push({ mat, phase: Math.random() * Math.PI * 2 });
+      }
+
+      // Warm glow from the tree lights
+      const treeGlow = new THREE.PointLight(0xffd59e, 1.2, 2.2);
+      treeGlow.position.set(-1.0, 1.1, -1.0);
+      roomGroup.add(treeGlow);
+
+      roomGroup.add(treeRoot);
+    });
+
     // Soft Aesthetic Round Pastel Rug Under Chair & Desk
     const cuteRug = new THREE.Mesh(
       new THREE.CylinderGeometry(1.4, 1.4, 0.018, 36),
       new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.95 })
     );
-    cuteRug.position.set(0, 0.009, 0.15);
+    cuteRug.position.set(0.85, 0.009, -0.6);
     cuteRug.receiveShadow = true;
     roomGroup.add(cuteRug);
 
@@ -531,7 +869,7 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
       new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 })
     );
     rugBorder.rotation.x = -Math.PI / 2;
-    rugBorder.position.set(0, 0.02, 0.15);
+    rugBorder.position.set(0.85, 0.02, -0.6);
     roomGroup.add(rugBorder);
 
     // ==========================================
@@ -585,9 +923,9 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     // Soft Sunlight Beam polygon hitting the floor
     const sunBeamGeo = new THREE.PlaneGeometry(1.7, 2.8);
     const sunBeamMat = new THREE.MeshBasicMaterial({
-      color: 0xffedd5,
+      color: 0xdbeafe,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.14,
       side: THREE.DoubleSide,
     });
     const sunBeamFloor = new THREE.Mesh(sunBeamGeo, sunBeamMat);
@@ -602,7 +940,7 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     // B. MÁY TÍNH & BÀN LÀM VIỆC ANIME (WORKSTATION - ONLY INTERACTIVE TARGET)
     // ==========================================
     const workstationGroup = new THREE.Group();
-    workstationGroup.position.set(0, 0, -0.6);
+    workstationGroup.position.set(0.85, 0, -1.56); // Sát tường cửa sổ (mép sau bàn chạm mép bậu cửa sổ)
 
     // 1. Desk Top (Bo tròn góc, bề mặt sáng mịn ấm áp)
     const deskTop = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.06, 0.95), deskTopMat);
@@ -808,29 +1146,51 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.016, 16), monitorBezelMat);
     lampGroup.add(lampBase);
 
-    const lampArm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.28, 12), chromeMat);
-    lampArm1.position.set(0, 0.14, 0);
-    lampArm1.rotation.z = -0.2;
-    lampGroup.add(lampArm1);
+    // Angle the lamp so its arm reaches toward the front-right, over the desk mat
+    lampGroup.rotation.y = -Math.PI / 4;
 
-    const lampArm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.22, 12), chromeMat);
-    lampArm2.position.set(-0.08, 0.34, 0);
-    lampArm2.rotation.z = 0.45;
-    lampGroup.add(lampArm2);
+    // Arm segment between two joints (in the lamp's local XY plane)
+    const addLampArm = (from: THREE.Vector2, to: THREE.Vector2) => {
+      const dir = to.clone().sub(from);
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, dir.length(), 12), chromeMat);
+      arm.position.set((from.x + to.x) / 2, (from.y + to.y) / 2, 0);
+      arm.rotation.z = Math.atan2(-dir.x, dir.y);
+      lampGroup.add(arm);
+    };
 
+    const lampBaseTop = new THREE.Vector2(0, 0.008);
+    const lampElbow = new THREE.Vector2(-0.05, 0.3);
+    const lampHeadJoint = new THREE.Vector2(0.12, 0.44);
+    addLampArm(lampBaseTop, lampElbow);
+    addLampArm(lampElbow, lampHeadJoint);
+
+    // Small joint knuckles
+    [lampElbow, lampHeadJoint].forEach((j) => {
+      const knuckle = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 12), monitorBezelMat);
+      knuckle.position.set(j.x, j.y, 0);
+      lampGroup.add(knuckle);
+    });
+
+    // Shade points down toward the desk (cone apex faces away from the light direction)
+    const lightDir = new THREE.Vector2(0.45, -0.89).normalize();
     const lampHead = new THREE.Mesh(
       new THREE.ConeGeometry(0.08, 0.12, 16, 1, true),
-      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.3, metalness: 0.6 })
+      new THREE.MeshStandardMaterial({
+        color: 0x18181b,
+        roughness: 0.3,
+        metalness: 0.6,
+        side: THREE.DoubleSide,
+      })
     );
-    lampHead.position.set(-0.16, 0.42, 0);
-    lampHead.rotation.z = -Math.PI / 3;
+    lampHead.position.set(lampHeadJoint.x + lightDir.x * 0.04, lampHeadJoint.y + lightDir.y * 0.04, 0);
+    lampHead.rotation.z = Math.atan2(lightDir.x, -lightDir.y);
     lampGroup.add(lampHead);
 
     const lampBulb = new THREE.Mesh(
       new THREE.SphereGeometry(0.03, 12, 12),
       new THREE.MeshBasicMaterial({ color: 0xffedd5 })
     );
-    lampBulb.position.set(-0.14, 0.4, 0);
+    lampBulb.position.set(lampHeadJoint.x + lightDir.x * 0.07, lampHeadJoint.y + lightDir.y * 0.07, 0);
     lampGroup.add(lampBulb);
 
     workstationGroup.add(lampGroup);
@@ -873,7 +1233,7 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     // C. GHẾ XOAY CÔNG THÁI HỌC ANIME (ERGONOMIC SWIVEL OFFICE CHAIR)
     // ==========================================
     const chairRootGroup = new THREE.Group();
-    chairRootGroup.position.set(0, 0, 0.45);
+    chairRootGroup.position.set(0.85, 0, -0.51);
 
     // 1. Fixed Chair Base: 5-star chrome spider base with caster wheels
     const chairBaseGroup = new THREE.Group();
@@ -1108,7 +1468,8 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
       });
     });
 
-    roomGroup.add(largeTreeGroup);
+    // Old corner plant replaced by the Christmas tree model
+    // roomGroup.add(largeTreeGroup);
 
     // 2. Chậu cây leo bậu cửa sổ (Window sill hanging ivy)
     const windowPlantGroup = new THREE.Group();
@@ -1149,7 +1510,9 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     // E. HỒ CÁ CẢNH THỦY SINH VỚI CÁ BƠI LỘI & BỌT KHÍ OXY (ILLUMINATED AQUARIUM)
     // ==========================================
     const aquariumRoot = new THREE.Group();
-    aquariumRoot.position.set(-1.68, 0, 0.55);
+    // Xoay 90° để mặt lưng tủ áp sát tường trái, mặt trước hướng vào giữa phòng
+    aquariumRoot.position.set(-1.95, 0, 0.55);
+    aquariumRoot.rotation.y = Math.PI / 2;
 
     // 1. Tủ đỡ hồ cá bằng gỗ phong cách hiện đại (Modern Aquarium Cabinet)
     const cabinetMat = new THREE.MeshStandardMaterial({
@@ -1508,6 +1871,14 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
       animationFrameId = requestAnimationFrame(animate);
       const delta = clock.getDelta();
       const elapsedTime = clock.getElapsedTime();
+
+      // Falling snow outside the window
+      winterSky.update(elapsedTime);
+
+      // Twinkling Christmas garland lights
+      twinkleBulbs.forEach((b) => {
+        b.mat.emissiveIntensity = 0.5 + 0.7 * (0.5 + 0.5 * Math.sin(elapsedTime * 2.5 + b.phase));
+      });
 
       // 1. Dao động ghế xoay thư giãn
       if (chairSwivelGroupRef.current) {

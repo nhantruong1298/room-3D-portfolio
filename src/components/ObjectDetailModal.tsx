@@ -81,7 +81,7 @@ export const ObjectDetailModal: React.FC<ObjectDetailModalProps> = ({
             onClose();
           }}
           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-          title="Đóng & quay lại toàn cảnh phòng"
+          title="Close & return to room overview"
         >
           <X className="w-4 h-4" />
         </button>
@@ -95,7 +95,7 @@ export const ObjectDetailModal: React.FC<ObjectDetailModalProps> = ({
 
         {objectInfo.details.highlights && (
           <div className="space-y-1.5 pt-1">
-            <span className="text-xs font-semibold text-slate-400">Chi tiết nổi bật:</span>
+            <span className="text-xs font-semibold text-slate-400">Highlights:</span>
             <ul className="space-y-1 text-xs text-slate-300">
               {objectInfo.details.highlights.map((hl, idx) => (
                 <li key={idx} className="flex items-start gap-2">
@@ -117,7 +117,7 @@ export const ObjectDetailModal: React.FC<ObjectDetailModalProps> = ({
           }}
           className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 cursor-pointer"
         >
-          ← Quay lại toàn cảnh
+          ← Back to overview
         </button>
 
         <div className="flex items-center gap-2">
@@ -138,10 +138,10 @@ export const ObjectDetailModal: React.FC<ObjectDetailModalProps> = ({
               onOpenComputer();
             }}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-lg shadow-black/40 transition-all cursor-pointer active:scale-95"
-            title="Mở máy tính xem CV chi tiết"
+            title="Open the computer to view the full CV"
           >
             <Monitor className="w-3.5 h-3.5" />
-            <span>Mở Máy Tính</span>
+            <span>Open Computer</span>
           </button>
         </div>
       </div>

@@ -77,13 +77,13 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
           </div>
           <div>
             <h2 className="text-base font-bold text-white flex items-center gap-2">
-              Hồ Sơ Năng Lực IT / Curriculum Vitae
+              Curriculum Vitae
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium">
                 Live Interactive
               </span>
             </h2>
             <p className="text-xs text-slate-400">
-              Cập nhật mới nhất • Sẵn sàng thay đổi thông tin theo hồ sơ của bạn
+              Latest update • Ready to be updated with your own profile
             </p>
           </div>
         </div>
@@ -96,25 +96,25 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
               onOpenEditor();
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-900/30 transition-all cursor-pointer active:scale-95"
-            title="Nhập và sửa thông tin CV của bạn"
+            title="Enter and edit your CV information"
           >
             <Edit3 className="w-3.5 h-3.5" />
-            <span>Nhập / Sửa CV Thật Của Bạn</span>
+            <span>Enter / Edit Your Real CV</span>
           </button>
 
           <button
             onClick={handleDownloadJSON}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-            title="Tải tệp JSON dữ liệu CV"
+            title="Download CV data as JSON"
           >
             <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Tải JSON</span>
+            <span className="hidden sm:inline">Download JSON</span>
           </button>
 
           <button
             onClick={handlePrint}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-            title="In hoặc Xuất định dạng PDF"
+            title="Print or export as PDF"
           >
             <Printer className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">In / PDF</span>
@@ -125,11 +125,11 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
       {/* Navigation Filter Tabs */}
       <div className="flex items-center gap-1 px-6 py-2 bg-slate-900/90 border-b border-slate-800/80 overflow-x-auto shrink-0">
         {[
-          { id: 'all', label: 'Toàn bộ CV (Full View)', icon: Layers },
-          { id: 'experience', label: 'Kinh Nghiệm Làm Việc', icon: Briefcase },
-          { id: 'skills', label: 'Kỹ Năng Công Nghệ', icon: Code },
-          { id: 'projects', label: 'Dự Án Tiêu Biểu', icon: Sparkles },
-          { id: 'education', label: 'Học Vấn & Bằng Cấp', icon: GraduationCap },
+          { id: 'all', label: 'Full CV', icon: Layers },
+          { id: 'experience', label: 'Work Experience', icon: Briefcase },
+          { id: 'skills', label: 'Tech Skills', icon: Code },
+          { id: 'projects', label: 'Featured Projects', icon: Sparkles },
+          { id: 'education', label: 'Education & Degrees', icon: GraduationCap },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -183,7 +183,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                 <button
                   onClick={handleCopyEmail}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-colors cursor-pointer"
-                  title="Nhấp để sao chép email"
+                  title="Click to copy email"
                 >
                   <Mail className="w-3.5 h-3.5 text-sky-400" />
                   <span>{cvData.profile.email}</span>
@@ -235,7 +235,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
             {/* Quick Experience Badge Card */}
             <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-950/60 border border-slate-800 shrink-0 text-center min-w-[130px]">
               <span className="text-3xl font-black text-sky-400">{cvData.profile.yearsOfExp}+</span>
-              <span className="text-xs font-semibold text-slate-300 mt-0.5">Năm Kinh Nghiệm</span>
+              <span className="text-xs font-semibold text-slate-300 mt-0.5">Years of Experience</span>
               <span className="text-[11px] text-slate-400 mt-1">Full Stack & IT</span>
             </div>
           </div>
@@ -243,7 +243,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
           {/* Bio / Executive Summary */}
           {cvData.profile.bio && (
             <div className="mt-5 pt-5 border-t border-slate-800 text-xs md:text-sm text-slate-300 leading-relaxed">
-              <strong className="text-sky-300 font-semibold">Tóm tắt mục tiêu & định hướng: </strong>
+              <strong className="text-sky-300 font-semibold">Summary & career goals: </strong>
               {cvData.profile.bio}
             </div>
           )}
@@ -257,10 +257,10 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                 <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   <Briefcase className="w-4 h-4" />
                 </div>
-                Kinh Nghiệm Làm Việc Chuyên Môn
+                Professional Work Experience
               </h3>
               <span className="text-xs text-slate-400 font-medium">
-                {cvData.experiences.length} Vị trí
+                {cvData.experiences.length} Positions
               </span>
             </div>
 
@@ -298,7 +298,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                     {/* Responsibilities */}
                     {exp.responsibilities && exp.responsibilities.length > 0 && (
                       <div className="space-y-1.5 pt-1">
-                        <span className="text-xs font-semibold text-slate-400">Trách nhiệm & Nhiệm vụ chính:</span>
+                        <span className="text-xs font-semibold text-slate-400">Key responsibilities:</span>
                         <ul className="space-y-1 text-xs text-slate-300">
                           {exp.responsibilities.map((resp, rIdx) => (
                             <li key={rIdx} className="flex items-start gap-2">
@@ -313,7 +313,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                     {/* Achievements */}
                     {exp.achievements && exp.achievements.length > 0 && (
                       <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200">
-                        <span className="font-semibold text-amber-300">Thành tích nổi bật: </span>
+                        <span className="font-semibold text-amber-300">Key achievements: </span>
                         {exp.achievements.join(' • ')}
                       </div>
                     )}
@@ -346,7 +346,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                 <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   <Code className="w-4 h-4" />
                 </div>
-                Kỹ Năng Chuyên Môn & Công Nghệ (Tech Stack)
+                Professional Skills & Tech Stack
               </h3>
             </div>
 
@@ -411,10 +411,10 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                 <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30">
                   <Sparkles className="w-4 h-4" />
                 </div>
-                Dự Án Tiêu Biểu & Sản Phẩm Đã Làm
+                Featured Projects & Products
               </h3>
               <span className="text-xs text-slate-400 font-medium">
-                {cvData.projects.length} Dự án
+                {cvData.projects.length} Projects
               </span>
             </div>
 
@@ -481,7 +481,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                           className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
                         >
                           <Github className="w-3.5 h-3.5" />
-                          <span>Mã nguồn</span>
+                          <span>Source code</span>
                         </a>
                       )}
                       {proj.liveUrl && (
@@ -492,7 +492,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                           className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors font-medium"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Trải nghiệm Live</span>
+                          <span>Live demo</span>
                         </a>
                       )}
                     </div>
@@ -512,7 +512,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                 <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
                   <GraduationCap className="w-4 h-4" />
                 </div>
-                Học Vấn & Đào Tạo
+                Education & Training
               </h3>
 
               <div className="space-y-3">
@@ -549,7 +549,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
                 <div className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30">
                   <Award className="w-4 h-4" />
                 </div>
-                Chứng Chỉ Chuyên Ngành
+                Professional Certificates
               </h3>
 
               <div className="space-y-3">
@@ -581,7 +581,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
             <div className="p-5 rounded-xl bg-slate-800/70 border border-slate-750 space-y-3">
               <h4 className="text-sm font-bold text-white flex items-center gap-2">
                 <Globe className="w-4 h-4 text-sky-400" />
-                Ngoại Ngữ
+                Languages
               </h4>
               <div className="space-y-3">
                 {cvData.languages.map((lang, idx) => (
@@ -605,7 +605,7 @@ export const CVViewer: React.FC<CVViewerProps> = ({ cvData, onOpenEditor }) => {
             <div className="p-5 rounded-xl bg-slate-800/70 border border-slate-750 space-y-3">
               <h4 className="text-sm font-bold text-white flex items-center gap-2">
                 <Heart className="w-4 h-4 text-rose-400" />
-                Sở Thích Cá Nhân & Động Lực
+                Personal Interests & Motivation
               </h4>
               <div className="flex flex-wrap gap-2">
                 {cvData.interests.map((interest, idx) => (
