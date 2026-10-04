@@ -760,6 +760,288 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     roomGroup.add(wreathGroup);
 
     // ==========================================
+    // SLEEPING CAT CURLED UP IN A CAT BED (NEXT TO THE CHRISTMAS TREE)
+    // ==========================================
+    const catRoot = new THREE.Group();
+    catRoot.position.set(-0.3, 0.02, -0.2);
+    catRoot.scale.setScalar(1.3);
+    catRoot.rotation.y = Math.PI / 4; // face toward the default camera
+
+    // Round cat bed: plush beige rim + cream cushion
+    const bedRim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.22, 0.048, 14, 36),
+      new THREE.MeshStandardMaterial({ color: 0xcbb293, roughness: 0.95 })
+    );
+    bedRim.rotation.x = Math.PI / 2;
+    bedRim.position.y = 0.045;
+    bedRim.castShadow = true;
+    bedRim.receiveShadow = true;
+    catRoot.add(bedRim);
+
+    const bedCushion = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.23, 0.065, 36),
+      new THREE.MeshStandardMaterial({ color: 0xf5efe3, roughness: 1 })
+    );
+    bedCushion.position.y = 0.0325;
+    bedCushion.receiveShadow = true;
+    catRoot.add(bedCushion);
+
+    // British Shorthair tortie-and-white: black & golden patches, white chest and paws.
+    // Patches are painted per vertex from a 3D noise of the vertex position (no UV seams).
+    const CAT_BLACK = new THREE.Color(0x1f1a17);
+    const CAT_BROWN = new THREE.Color(0x5a3a22);
+    const CAT_GOLD = new THREE.Color(0xd99a3e);
+    const CAT_WHITE = new THREE.Color(0xf7f0e6);
+
+    const tortieNoise = (p: THREE.Vector3) =>
+      Math.sin(p.x * 38 + 1.3) * Math.sin(p.y * 33 + 0.7) +
+      Math.sin(p.z * 41 + 2.1) * Math.sin(p.x * 27 - p.z * 31) +
+      0.5 * Math.sin((p.x + p.y * 0.7 + p.z) * 61);
+
+    const tortieColor = (p: THREE.Vector3, out: THREE.Color) => {
+      const n = tortieNoise(p);
+      if (n > 0.32) out.copy(CAT_GOLD);
+      else if (n > 0.18) out.copy(CAT_BROWN).lerp(CAT_GOLD, (n - 0.18) / 0.14);
+      else out.copy(CAT_BLACK).lerp(CAT_BROWN, Math.max(0, (n + 0.05) / 0.23) * 0.5);
+      return out;
+    };
+
+    // Paint a mesh's vertices; `isWhite` decides which areas are white fur (in parent space)
+    const paintFur = (mesh: THREE.Mesh, isWhite: (p: THREE.Vector3) => boolean = () => false) => {
+      mesh.updateMatrix();
+      const geo = mesh.geometry;
+      const pos = geo.attributes.position;
+      const colors = new Float32Array(pos.count * 3);
+      const p = new THREE.Vector3();
+      const c = new THREE.Color();
+      for (let i = 0; i < pos.count; i++) {
+        p.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrix);
+        if (isWhite(p)) c.copy(CAT_WHITE);
+        else tortieColor(p, c);
+        colors.set([c.r, c.g, c.b], i * 3);
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    };
+
+    const furMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+    const whiteFurMat = new THREE.MeshStandardMaterial({ color: CAT_WHITE, roughness: 0.95 });
+
+    const catBody = new THREE.Group();
+    catBody.position.y = 0.065; // sits on top of the cushion
+    catRoot.add(catBody);
+
+    // Chunky curled body (British Shorthair "loaf"), white chest at the front-bottom
+    const BODY_SCALE = new THREE.Vector3(0.15, 0.088, 0.12);
+    const catTorso = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), furMat);
+    catTorso.scale.copy(BODY_SCALE);
+    catTorso.position.set(-0.02, 0.08, -0.01);
+    catTorso.castShadow = true;
+    paintFur(catTorso, (p) => p.y < 0.05 && p.x > 0.0 && p.z > 0.02);
+    catBody.add(catTorso);
+
+    // Haunch bump at the back
+    const haunch = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 18), furMat);
+    haunch.scale.set(0.085, 0.075, 0.09);
+    haunch.position.set(-0.1, 0.085, -0.03);
+    haunch.castShadow = true;
+    paintFur(haunch);
+    catBody.add(haunch);
+
+    // White paws: two tucked front paws and one back foot peeking out
+    for (const [px, py, pz] of [[0.07, 0.024, 0.13], [0.13, 0.024, 0.11], [-0.075, 0.022, 0.11]]) {
+      const paw = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), whiteFurMat);
+      paw.scale.set(0.034, 0.021, 0.027);
+      paw.position.set(px, py, pz);
+      paw.castShadow = true;
+      catBody.add(paw);
+    }
+
+    // Big round head resting on the paws, tilted sleepily
+    const catHead = new THREE.Group();
+    const HEAD_BASE = new THREE.Vector3(0.105, 0.085, 0.07);
+    catHead.position.copy(HEAD_BASE);
+    catHead.rotation.set(0.12, 0.4, 0.22);
+    catBody.add(catHead);
+
+    // Split tortie face: black on one side, gold on the other, white muzzle & chin
+    const faceColor = (p: THREE.Vector3) => (p.x < -0.004 ? CAT_BLACK : CAT_GOLD);
+    const paintFace = (mesh: THREE.Mesh) => {
+      mesh.updateMatrix();
+      const pos = mesh.geometry.attributes.position;
+      const colors = new Float32Array(pos.count * 3);
+      const p = new THREE.Vector3();
+      const c = new THREE.Color();
+      for (let i = 0; i < pos.count; i++) {
+        p.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrix);
+        if (p.y < -0.02 && p.z > 0.02) c.copy(CAT_WHITE); // chin
+        else c.copy(faceColor(p)).lerp(CAT_BROWN, Math.max(0, 0.25 - Math.abs(p.x) * 12));
+        colors.set([c.r, c.g, c.b], i * 3);
+      }
+      mesh.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    };
+
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 22), furMat);
+    skull.scale.set(0.07, 0.06, 0.062);
+    skull.castShadow = true;
+    paintFace(skull);
+    catHead.add(skull);
+
+    // Chubby cheeks (the signature round British Shorthair face)
+    for (const side of [-1, 1]) {
+      const cheek = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), furMat);
+      cheek.scale.set(0.034, 0.03, 0.03);
+      cheek.position.set(side * 0.032, -0.016, 0.03);
+      paintFace(cheek);
+      catHead.add(cheek);
+    }
+
+    // Short white muzzle and pink nose
+    for (const mx of [-0.011, 0.011]) {
+      const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.016, 14, 12), whiteFurMat);
+      muzzle.position.set(mx, -0.02, 0.052);
+      catHead.add(muzzle);
+    }
+    const nose = new THREE.Mesh(
+      new THREE.SphereGeometry(0.0065, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0xe88a9a, roughness: 0.5 })
+    );
+    nose.scale.set(1.25, 0.8, 0.8);
+    nose.position.set(0, -0.008, 0.064);
+    catHead.add(nose);
+
+    // Closed eyes: little downward arcs "︶" (light on the black side, dark on the gold side)
+    for (const ex of [-0.026, 0.026]) {
+      const eye = new THREE.Mesh(
+        new THREE.TorusGeometry(0.01, 0.0019, 6, 14, Math.PI),
+        new THREE.MeshBasicMaterial({ color: ex < 0 ? 0x8a7f74 : 0x2b1a10 })
+      );
+      eye.rotation.set(0, ex > 0 ? 0.4 : -0.4, Math.PI);
+      eye.position.set(ex, 0.012, 0.057);
+      catHead.add(eye);
+    }
+
+    // Small rounded ears set wide apart (pivot at the base so they can twitch)
+    const earInnerMat = new THREE.MeshStandardMaterial({ color: 0xe9a7a7, roughness: 0.8 });
+    const catEars: THREE.Group[] = [];
+    for (const side of [-1, 1]) {
+      const earPivot = new THREE.Group();
+      earPivot.position.set(side * 0.042, 0.042, -0.004);
+      earPivot.rotation.z = -side * 0.6;
+      const outer = new THREE.Mesh(
+        new THREE.ConeGeometry(0.021, 0.034, 12),
+        new THREE.MeshStandardMaterial({ color: side < 0 ? CAT_BLACK : CAT_GOLD, roughness: 0.95 })
+      );
+      outer.scale.set(1, 1, 0.55);
+      outer.position.y = 0.013;
+      earPivot.add(outer);
+      const inner = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.022, 10), earInnerMat);
+      inner.scale.set(1, 1, 0.4);
+      inner.position.set(0, 0.01, 0.007);
+      earPivot.add(inner);
+      catHead.add(earPivot);
+      catEars.push(earPivot);
+    }
+
+    // Thick tail wrapped around the front, made of many overlapping spheres so it reads as
+    // one smooth tube while still letting the tip sway
+    const tailCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.165, 0.065, -0.02),
+      new THREE.Vector3(-0.175, 0.035, 0.07),
+      new THREE.Vector3(-0.1, 0.026, 0.135),
+      new THREE.Vector3(-0.01, 0.026, 0.15),
+      new THREE.Vector3(0.045, 0.03, 0.14),
+    ]);
+    const TAIL_SEGMENTS = 40;
+    const tailSegments: { mesh: THREE.Mesh; base: THREE.Vector3; k: number }[] = [];
+    const tailColor = new THREE.Color();
+    for (let i = 0; i <= TAIL_SEGMENTS; i++) {
+      const k = i / TAIL_SEGMENTS;
+      const base = tailCurve.getPointAt(k);
+      tortieColor(base, tailColor);
+      const seg = new THREE.Mesh(
+        new THREE.SphereGeometry(0.027 - k * 0.006, 14, 10),
+        new THREE.MeshStandardMaterial({ color: k > 0.88 ? CAT_BLACK : tailColor.clone(), roughness: 0.95 })
+      );
+      seg.position.copy(base);
+      seg.castShadow = true;
+      catBody.add(seg);
+      tailSegments.push({ mesh: seg, base, k });
+    }
+
+    // Floating "Z" letters above the sleeping cat
+    const createZTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.font = 'bold 52px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeText('Z', 32, 34);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillText('Z', 32, 34);
+      }
+      return new THREE.CanvasTexture(canvas);
+    };
+    const zTexture = createZTexture();
+    const zSprites = [0, 1, 2].map(() => {
+      const sprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: zTexture, transparent: true, depthWrite: false })
+      );
+      catRoot.add(sprite);
+      return sprite;
+    });
+
+    let nextEarTwitch = 3;
+    let earTwitchStart = -10;
+    let twitchEar = 0;
+
+    const updateCat = (time: number) => {
+      // Slow sleepy breathing (~20 breaths per minute)
+      const breath = Math.sin(time * Math.PI * 2 * 0.33);
+      catTorso.scale.set(
+        BODY_SCALE.x,
+        BODY_SCALE.y * (1 + 0.05 * breath),
+        BODY_SCALE.z * (1 + 0.03 * breath)
+      );
+      catHead.position.set(HEAD_BASE.x, HEAD_BASE.y + 0.003 * breath, HEAD_BASE.z);
+
+      // Occasional ear twitch
+      if (time > nextEarTwitch) {
+        earTwitchStart = time;
+        twitchEar = Math.random() < 0.5 ? 0 : 1;
+        nextEarTwitch = time + 4 + Math.random() * 6;
+      }
+      const tt = time - earTwitchStart;
+      catEars.forEach((ear, idx) => {
+        const side = idx === 0 ? -1 : 1;
+        const twitch = idx === twitchEar && tt < 0.45 ? Math.sin(tt * 45) * 0.3 * (1 - tt / 0.45) : 0;
+        ear.rotation.z = -side * 0.35 + twitch;
+      });
+
+      // Lazy tail-tip sway (only the last part of the tail moves)
+      tailSegments.forEach(({ mesh, base, k }) => {
+        const w = Math.max(0, (k - 0.55) / 0.45);
+        const sway = Math.sin(time * 1.3 - k * 2) * 0.018 * w * w;
+        mesh.position.set(base.x + sway * 0.6, base.y + Math.abs(sway) * 0.8, base.z - sway * 0.4);
+      });
+
+      // "Zzz" rising and fading
+      zSprites.forEach((sprite, i) => {
+        const p = (time * 0.3 + i / 3) % 1;
+        sprite.position.set(0.12 + p * 0.08, 0.2 + p * 0.22, 0.06 + p * 0.03);
+        const size = 0.035 + p * 0.035;
+        sprite.scale.set(size, size, size);
+        (sprite.material as THREE.SpriteMaterial).opacity = Math.sin(p * Math.PI);
+      });
+    };
+
+    roomGroup.add(catRoot);
+
+    // ==========================================
     // CHRISTMAS TREE (GLB MODEL) IN THE BACK-LEFT CORNER
     // ==========================================
     // The GLB has geometry only (no materials/UVs), so it is colored per vertex:
@@ -1727,136 +2009,314 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     aquaLight.position.set(0, 0.05, 0);
     tankGroup.add(aquaLight);
 
-    // 3. ĐÀN CÁ BƠI LỘI SINH ĐỘNG (ANIMATED SWIMMING FISH)
-    const animatedFishList: {
-      group: THREE.Group;
-      tailGroup: THREE.Group;
+    // 3. REALISTIC SWIMMING FISH
+    // Each fish has a streamlined lathe body with vertex-colored markings and translucent fins.
+    // A vertex-shader wave bends the whole body (stronger toward the tail), and a simple
+    // wander/steering behaviour moves the fish around the tank with smooth turns and banking.
+    interface FishSpec {
+      length: number;
+      radius: number;
+      back: number;
+      belly: number;
+      fin: number;
+      finOpacity: number;
+      tailScale: number;
+      stripe?: number;
+      redRear?: number;
+      minSpeed: number;
+      maxSpeed: number;
+      school?: boolean;
+    }
+
+    interface SwimmingFish {
+      root: THREE.Group;
+      pectorals: THREE.Mesh[];
+      uniforms: { uSwim: { value: number }; uAmp: { value: number } };
+      spec: FishSpec;
+      dir: THREE.Vector3;
+      target: THREE.Vector3;
+      schoolOffset: THREE.Vector3;
       speed: number;
-      radiusX: number;
-      radiusZ: number;
-      radiusY: number;
-      offsetPhase: number;
-      baseY: number;
-      tailSpeed: number;
-    }[] = [];
+      cruise: number;
+      retargetIn: number;
+      roll: number;
+    }
 
-    // Helper tạo một chú cá với cấu tạo thân hình thoi và vây đuôi có thể uốn lượn
-    const createFish = (
-      bodyColor: number,
-      tailColor: number,
-      accentColor: number,
-      scale = 1.0
+    // Swim area inside the water (tank-local coords), leaving room for the fish length
+    const SWIM_MIN = new THREE.Vector3(-0.29, -0.11, -0.11);
+    const SWIM_MAX = new THREE.Vector3(0.29, 0.12, 0.11);
+    const randomSwimPoint = () =>
+      new THREE.Vector3(
+        THREE.MathUtils.lerp(SWIM_MIN.x, SWIM_MAX.x, Math.random()),
+        THREE.MathUtils.lerp(SWIM_MIN.y, SWIM_MAX.y, Math.random()),
+        THREE.MathUtils.lerp(SWIM_MIN.z, SWIM_MAX.z, Math.random())
+      );
+
+    // Bend vertices sideways with a travelling wave; amplitude grows from head (0) to tail (1)
+    const applySwimBend = (
+      material: THREE.Material,
+      uniforms: SwimmingFish['uniforms'],
+      length: number
     ) => {
-      const fishRoot = new THREE.Group();
-
-      // Thân cá thuôn nhọn theo trục Z (mũi hướng về +Z, đuôi ở -Z)
-      const bodyGeo = new THREE.SphereGeometry(0.028 * scale, 12, 10);
-      bodyGeo.scale(0.5, 0.8, 1.8);
-      const fishMat = new THREE.MeshStandardMaterial({
-        color: bodyColor,
-        roughness: 0.2,
-        metalness: 0.3,
-      });
-      const fishBody = new THREE.Mesh(bodyGeo, fishMat);
-      fishRoot.add(fishBody);
-
-      // Sọc neon hoặc bụng cá lấp lánh
-      const stripeGeo = new THREE.BoxGeometry(0.006 * scale, 0.015 * scale, 0.07 * scale);
-      const stripeMat = new THREE.MeshBasicMaterial({ color: accentColor });
-      const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-      stripe.position.set(0, 0.005 * scale, 0);
-      fishRoot.add(stripe);
-
-      // Hai mắt cá tròn đáng yêu
-      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
-      const eyeGeo = new THREE.SphereGeometry(0.004 * scale, 8, 8);
-      const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-      eyeL.position.set(0.014 * scale, 0.008 * scale, 0.032 * scale);
-      fishRoot.add(eyeL);
-
-      const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-      eyeR.position.set(-0.014 * scale, 0.008 * scale, 0.032 * scale);
-      fishRoot.add(eyeR);
-
-      // Vây lưng cá (Dorsal Fin)
-      const dorsalFin = new THREE.Mesh(
-        new THREE.BoxGeometry(0.003 * scale, 0.025 * scale, 0.035 * scale),
-        new THREE.MeshStandardMaterial({
-          color: tailColor,
-          transparent: true,
-          opacity: 0.85,
-        })
-      );
-      dorsalFin.position.set(0, 0.028 * scale, -0.01 * scale);
-      fishRoot.add(dorsalFin);
-
-      // Khớp vây đuôi riêng biệt để uốn lượn khi bơi
-      const tailPivot = new THREE.Group();
-      tailPivot.position.set(0, 0, -0.045 * scale);
-
-      const finGeo = new THREE.ConeGeometry(0.025 * scale, 0.065 * scale, 8);
-      finGeo.scale(0.12, 1, 1);
-      finGeo.rotateX(-Math.PI / 2);
-      const caudalFin = new THREE.Mesh(
-        finGeo,
-        new THREE.MeshStandardMaterial({
-          color: tailColor,
-          transparent: true,
-          opacity: 0.88,
-          side: THREE.DoubleSide,
-        })
-      );
-      caudalFin.position.set(0, 0, -0.03 * scale);
-      tailPivot.add(caudalFin);
-      fishRoot.add(tailPivot);
-
-      return { fishRoot, tailPivot };
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.uSwim = uniforms.uSwim;
+        shader.uniforms.uAmp = uniforms.uAmp;
+        shader.uniforms.uHalfLen = { value: length / 2 };
+        shader.vertexShader = shader.vertexShader
+          .replace(
+            '#include <common>',
+            '#include <common>\nuniform float uSwim;\nuniform float uAmp;\nuniform float uHalfLen;'
+          )
+          .replace(
+            '#include <begin_vertex>',
+            `#include <begin_vertex>
+            float bendS = clamp((uHalfLen * 0.7 - transformed.z) / (uHalfLen * 1.7), 0.0, 1.6);
+            transformed.x += uAmp * bendS * bendS * sin(uSwim - bendS * 4.2);`
+          );
+      };
     };
 
-    // Cá số 1: Cá Koi mini vàng cam rực rỡ
-    const fish1Data = createFish(0xf97316, 0xfdba74, 0xffffff, 1.15);
-    tankGroup.add(fish1Data.fishRoot);
-    animatedFishList.push({
-      group: fish1Data.fishRoot,
-      tailGroup: fish1Data.tailPivot,
-      speed: 0.75,
-      radiusX: 0.26,
-      radiusZ: 0.1,
-      radiusY: 0.05,
-      offsetPhase: 0,
-      baseY: 0.02,
-      tailSpeed: 9.5,
-    });
+    const createRealisticFish = (spec: FishSpec): SwimmingFish => {
+      const { length: L, radius: R } = spec;
+      const root = new THREE.Group();
+      const uniforms = { uSwim: { value: Math.random() * 10 }, uAmp: { value: 0 } };
 
-    // Cá số 2: Cá Neon Tetra phát sáng xanh ngọc & đuôi đỏ thắm
-    const fish2Data = createFish(0x0284c7, 0xef4444, 0x38bdf8, 0.85);
-    tankGroup.add(fish2Data.fishRoot);
-    animatedFishList.push({
-      group: fish2Data.fishRoot,
-      tailGroup: fish2Data.tailPivot,
-      speed: 0.95,
-      radiusX: 0.24,
-      radiusZ: 0.11,
-      radiusY: 0.06,
-      offsetPhase: 2.4,
-      baseY: -0.05,
-      tailSpeed: 12.0,
-    });
+      // Streamlined body profile from tail (s=0) to head (s=1), revolved then flattened sideways
+      const profile: THREE.Vector2[] = [];
+      const STEPS = 24;
+      for (let i = 0; i <= STEPS; i++) {
+        const s = i / STEPS;
+        const r = s >= 1 ? 0 : R * Math.max(0.16, Math.pow(Math.sin(Math.PI * Math.pow(s, 0.8)), 0.75));
+        profile.push(new THREE.Vector2(r, (s - 0.5) * L));
+      }
+      const bodyGeo = new THREE.LatheGeometry(profile, 20);
+      bodyGeo.rotateX(Math.PI / 2); // lathe axis Y → fish axis Z (head toward +Z)
+      bodyGeo.scale(0.55, 1, 1); // laterally compressed like a real fish
 
-    // Cá số 3: Cá Bảy Màu (Guppy) vàng hoàng kim uyển chuyển
-    const fish3Data = createFish(0xeab308, 0xf59e0b, 0xfef08a, 0.95);
-    tankGroup.add(fish3Data.fishRoot);
-    animatedFishList.push({
-      group: fish3Data.fishRoot,
-      tailGroup: fish3Data.tailPivot,
-      speed: 0.65,
-      radiusX: 0.22,
-      radiusZ: 0.08,
-      radiusY: 0.04,
-      offsetPhase: 4.6,
-      baseY: 0.07,
-      tailSpeed: 8.5,
+      // Vertex colors: dark back, pale belly, optional neon stripe and red rear belly
+      const pos = bodyGeo.attributes.position;
+      const colors = new Float32Array(pos.count * 3);
+      const back = new THREE.Color(spec.back);
+      const belly = new THREE.Color(spec.belly);
+      const c = new THREE.Color();
+      for (let i = 0; i < pos.count; i++) {
+        const s = pos.getZ(i) / L + 0.5;
+        const h = pos.getY(i) / R; // -1 belly … 1 back
+        c.copy(belly).lerp(back, THREE.MathUtils.smoothstep(h, -0.35, 0.55));
+        if (spec.redRear !== undefined && s < 0.55 && s > 0.08 && h < 0.05) c.set(spec.redRear);
+        if (spec.stripe !== undefined && Math.abs(h - 0.22) < 0.17 && s > 0.12 && s < 0.85) c.set(spec.stripe);
+        colors.set([c.r, c.g, c.b], i * 3);
+      }
+      bodyGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const bodyMat = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.35,
+        metalness: 0.25,
+        emissive: spec.stripe ?? 0x000000,
+        emissiveIntensity: spec.stripe !== undefined ? 0.08 : 0,
+      });
+      applySwimBend(bodyMat, uniforms, L);
+      root.add(new THREE.Mesh(bodyGeo, bodyMat));
+
+      const finMat = new THREE.MeshStandardMaterial({
+        color: spec.fin,
+        transparent: true,
+        opacity: spec.finOpacity,
+        roughness: 0.4,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      applySwimBend(finMat, uniforms, L);
+
+      // Forked caudal (tail) fin, drawn in the fish's vertical plane
+      const tailLen = L * 0.32 * spec.tailScale;
+      const tailH = R * 1.5 * spec.tailScale;
+      const tailShape = new THREE.Shape();
+      tailShape.moveTo(0, R * 0.12);
+      tailShape.quadraticCurveTo(tailLen * 0.5, tailH * 0.4, tailLen, tailH);
+      tailShape.quadraticCurveTo(tailLen * 0.7, tailH * 0.2, tailLen * 0.62, 0);
+      tailShape.quadraticCurveTo(tailLen * 0.7, -tailH * 0.2, tailLen, -tailH);
+      tailShape.quadraticCurveTo(tailLen * 0.5, -tailH * 0.4, 0, -R * 0.12);
+      const tailGeo = new THREE.ShapeGeometry(tailShape, 8);
+      tailGeo.rotateY(Math.PI / 2); // shape +X → fish -Z (behind the body)
+      tailGeo.translate(0, 0, -L * 0.48);
+      root.add(new THREE.Mesh(tailGeo, finMat));
+
+      // Dorsal fin on the back
+      const dorsalShape = new THREE.Shape();
+      dorsalShape.moveTo(-L * 0.12, 0);
+      dorsalShape.quadraticCurveTo(0, R * 1.1, L * 0.14, R * 0.9);
+      dorsalShape.lineTo(L * 0.12, 0);
+      const dorsalGeo = new THREE.ShapeGeometry(dorsalShape, 6);
+      dorsalGeo.rotateY(Math.PI / 2);
+      dorsalGeo.translate(0, R * 0.85, -L * 0.02);
+      root.add(new THREE.Mesh(dorsalGeo, finMat));
+
+      // Anal fin under the rear belly
+      const analGeo = dorsalGeo.clone();
+      analGeo.scale(1, -0.6, 0.8);
+      analGeo.translate(0, -R * 0.35, -L * 0.1);
+      root.add(new THREE.Mesh(analGeo, finMat));
+
+      // Pectoral fins that paddle gently
+      const pectorals: THREE.Mesh[] = [];
+      const pecGeo = new THREE.CircleGeometry(R * 0.55, 10);
+      pecGeo.scale(1, 0.55, 1);
+      pecGeo.translate(R * 0.5, 0, 0);
+      for (const side of [-1, 1]) {
+        const pec = new THREE.Mesh(pecGeo, finMat);
+        pec.position.set(side * R * 0.42, -R * 0.35, L * 0.18);
+        pec.rotation.set(Math.PI / 2, 0, side > 0 ? -0.5 : Math.PI + 0.5);
+        root.add(pec);
+        pectorals.push(pec);
+      }
+
+      // Glossy eyes
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.05, metalness: 0.2 });
+      const eyeGeo = new THREE.SphereGeometry(R * 0.2, 10, 10);
+      for (const side of [-1, 1]) {
+        const eye = new THREE.Mesh(eyeGeo, eyeMat);
+        eye.position.set(side * R * 0.42, R * 0.22, L * 0.36);
+        root.add(eye);
+      }
+
+      root.position.copy(randomSwimPoint());
+      const dir = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+      root.lookAt(root.position.clone().add(dir));
+
+      return {
+        root,
+        pectorals,
+        uniforms,
+        spec,
+        dir,
+        target: randomSwimPoint(),
+        schoolOffset: new THREE.Vector3(
+          (Math.random() - 0.5) * 0.08,
+          (Math.random() - 0.5) * 0.05,
+          (Math.random() - 0.5) * 0.06
+        ),
+        speed: spec.minSpeed,
+        cruise: spec.minSpeed,
+        retargetIn: Math.random() * 2,
+        roll: 0,
+      };
+    };
+
+    const swimmingFish: SwimmingFish[] = [];
+    const addFish = (spec: FishSpec, count = 1) => {
+      for (let i = 0; i < count; i++) {
+        const fish = createRealisticFish(spec);
+        tankGroup.add(fish.root);
+        swimmingFish.push(fish);
+      }
+    };
+
+    // Goldfish: orange back, golden belly, long flowing tail
+    addFish({
+      length: 0.075, radius: 0.017, back: 0xe8590c, belly: 0xfcd34d, fin: 0xfb923c,
+      finOpacity: 0.7, tailScale: 1.5, minSpeed: 0.035, maxSpeed: 0.09,
     });
+    // Guppies: silver body with large colorful tails
+    addFish({
+      length: 0.042, radius: 0.0085, back: 0x64748b, belly: 0xe2e8f0, fin: 0xf97316,
+      finOpacity: 0.8, tailScale: 1.9, minSpeed: 0.05, maxSpeed: 0.12,
+    });
+    addFish({
+      length: 0.042, radius: 0.0085, back: 0x475569, belly: 0xe2e8f0, fin: 0x3b82f6,
+      finOpacity: 0.8, tailScale: 1.9, minSpeed: 0.05, maxSpeed: 0.12,
+    });
+    // School of neon tetras: glowing cyan stripe and red rear belly
+    addFish(
+      {
+        length: 0.034, radius: 0.0062, back: 0x1e293b, belly: 0xe5e7eb, fin: 0xe2e8f0,
+        finOpacity: 0.35, tailScale: 1, stripe: 0x22d3ee, redRear: 0xdc2626,
+        minSpeed: 0.06, maxSpeed: 0.14, school: true,
+      },
+      6
+    );
+
+    // Shared target the tetra school drifts toward
+    const schoolTarget = randomSwimPoint();
+    let schoolRetargetIn = 0;
+
+    const _desired = new THREE.Vector3();
+    const _prevDir = new THREE.Vector3();
+    const _lookMat = new THREE.Matrix4();
+    const _targetQuat = new THREE.Quaternion();
+    const _rollQuat = new THREE.Quaternion();
+    const _forward = new THREE.Vector3(0, 0, 1);
+    const _up = new THREE.Vector3(0, 1, 0);
+
+    const updateFish = (dtRaw: number, time: number) => {
+      const dt = Math.min(dtRaw, 0.05);
+
+      schoolRetargetIn -= dt;
+      if (schoolRetargetIn <= 0) {
+        schoolTarget.copy(randomSwimPoint());
+        schoolRetargetIn = 3 + Math.random() * 4;
+      }
+
+      for (const fish of swimmingFish) {
+        const { root, spec } = fish;
+        const pos = root.position;
+
+        // Pick a new destination (and a new cruising speed, sometimes a short burst)
+        fish.retargetIn -= dt;
+        if (fish.spec.school) {
+          fish.target.copy(schoolTarget).add(fish.schoolOffset);
+        } else if (fish.retargetIn <= 0 || pos.distanceTo(fish.target) < 0.04) {
+          fish.target.copy(randomSwimPoint());
+          fish.retargetIn = 2.5 + Math.random() * 4;
+        }
+        if (fish.retargetIn <= 0 || Math.random() < dt * 0.15) {
+          const burst = Math.random() < 0.15;
+          fish.cruise = burst
+            ? spec.maxSpeed
+            : THREE.MathUtils.lerp(spec.minSpeed, spec.maxSpeed * 0.6, Math.random());
+          if (fish.spec.school) fish.retargetIn = 2 + Math.random() * 3;
+        }
+
+        // Steer toward the target, keeping vertical motion gentle and avoiding the glass
+        _desired.copy(fish.target).sub(pos);
+        _desired.y *= 0.5;
+        const margin = 0.04;
+        if (pos.x < SWIM_MIN.x + margin) _desired.x += 0.2;
+        if (pos.x > SWIM_MAX.x - margin) _desired.x -= 0.2;
+        if (pos.z < SWIM_MIN.z + margin) _desired.z += 0.2;
+        if (pos.z > SWIM_MAX.z - margin) _desired.z -= 0.2;
+        if (pos.y < SWIM_MIN.y + margin) _desired.y += 0.1;
+        if (pos.y > SWIM_MAX.y - margin) _desired.y -= 0.1;
+        _desired.normalize();
+
+        _prevDir.copy(fish.dir);
+        fish.dir.lerp(_desired, Math.min(1, dt * 1.6)).normalize();
+
+        fish.speed += (fish.cruise - fish.speed) * Math.min(1, dt * 1.2);
+        pos.addScaledVector(fish.dir, fish.speed * dt);
+        pos.clamp(SWIM_MIN, SWIM_MAX);
+
+        // Face the swimming direction smoothly and bank into turns
+        const turnRate = _prevDir.clone().cross(fish.dir).y / Math.max(dt, 1e-4);
+        fish.roll += (THREE.MathUtils.clamp(-turnRate * 0.25, -0.45, 0.45) - fish.roll) * Math.min(1, dt * 3);
+        _lookMat.lookAt(pos.clone().add(fish.dir), pos, _up);
+        _targetQuat.setFromRotationMatrix(_lookMat);
+        _rollQuat.setFromAxisAngle(_forward, fish.roll);
+        _targetQuat.multiply(_rollQuat);
+        root.quaternion.slerp(_targetQuat, Math.min(1, dt * 6));
+
+        // Body wave: faster and wider when swimming fast or turning
+        const effort = fish.speed / spec.maxSpeed;
+        fish.uniforms.uSwim.value += dt * (6 + effort * 14);
+        fish.uniforms.uAmp.value = spec.length * (0.05 + effort * 0.09 + Math.min(Math.abs(turnRate), 2) * 0.03);
+
+        // Pectoral fins paddle softly
+        const paddle = Math.sin(time * 5 + fish.uniforms.uSwim.value * 0.3) * 0.35;
+        fish.pectorals[0].rotation.y = paddle;
+        fish.pectorals[1].rotation.y = -paddle;
+      }
+    };
 
     aquariumRoot.add(tankGroup);
     roomGroup.add(aquariumRoot);
@@ -1917,27 +2377,11 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
         }
       });
 
-      // 6. Hoạt họa cá bơi lội 3D và vẫy đuôi tự nhiên
-      animatedFishList.forEach((fish) => {
-        const t = elapsedTime * fish.speed + fish.offsetPhase;
-        const currX = Math.sin(t) * fish.radiusX;
-        const currZ = Math.cos(t * 1.25) * fish.radiusZ;
-        const currY = fish.baseY + Math.sin(t * 1.7) * fish.radiusY;
+      // 6. Realistic fish swimming (steering + body wave)
+      updateFish(delta, elapsedTime);
 
-        // Điểm tiếp theo để định hướng góc nhìn bơi
-        const dt = 0.06;
-        const nextT = t + dt * fish.speed;
-        const nextX = Math.sin(nextT) * fish.radiusX;
-        const nextZ = Math.cos(nextT * 1.25) * fish.radiusZ;
-        const nextY = fish.baseY + Math.sin(nextT * 1.7) * fish.radiusY;
-
-        fish.group.position.set(currX, currY, currZ);
-        fish.group.lookAt(nextX, nextY, nextZ);
-
-        // Vẫy đuôi cá theo nhịp
-        fish.tailGroup.rotation.y =
-          Math.sin(elapsedTime * fish.tailSpeed + fish.offsetPhase) * 0.45;
-      });
+      // Sleeping cat: breathing, ear twitches, tail sway, Zzz
+      updateCat(elapsedTime);
 
       // Smooth camera interpolation towards target
       if (isAnimatingFocus.current && cameraRef.current && controlsRef.current) {
