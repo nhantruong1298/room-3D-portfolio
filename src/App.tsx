@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ThreeRoom } from './components/ThreeRoom';
 import { ComputerOS } from './components/ComputerOS';
 import { CVEditorModal } from './components/CVEditorModal';
+import { ChatWidget } from './components/ChatWidget';
 import { RoomObjectId, CVData } from './types';
 import { DEFAULT_CV_DATA } from './data/cvData';
 
@@ -80,6 +81,9 @@ export default function App() {
         onSave={handleSaveCVData}
         onClose={() => setIsCVEditorOpen(false)}
       />
+
+      {/* 4. Floating Chat Widget */}
+      <ChatWidget />
     </main>
   );
 }
