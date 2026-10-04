@@ -978,7 +978,528 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
     roomGroup.add(chairRootGroup);
 
     // ==========================================
-    // 8. RENDER LOOP WITH ORBIT CONTROLS & SMOOTH FOCUS & CHAIR SWIVEL
+    // D. CÂY CẢNH 3D HOẠT HỌA RUNG RINH TRONG GIÓ (ANIMATED BOTANICAL PLANTS)
+    // ==========================================
+    const animatedTreeBranches: {
+      group: THREE.Group;
+      baseRotX: number;
+      baseRotZ: number;
+      phase: number;
+      speed: number;
+      amp: number;
+    }[] = [];
+
+    const animatedVines: {
+      group: THREE.Group;
+      baseRotZ: number;
+      phase: number;
+    }[] = [];
+
+    // 1. Chậu cây Monstera nhiệt đới lớn góc phòng (x: -1.75, z: -1.65)
+    const largeTreeGroup = new THREE.Group();
+    largeTreeGroup.position.set(-1.75, 0, -1.65);
+
+    // Đế đỡ chậu bằng gỗ tự nhiên (4 chân)
+    const potStandGroup = new THREE.Group();
+    const standRing = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.03, 20), deskWoodMat);
+    standRing.position.set(0, 0.08, 0);
+    potStandGroup.add(standRing);
+
+    for (let legI = 0; legI < 4; legI++) {
+      const legAng = (legI * Math.PI) / 2 + Math.PI / 4;
+      const standLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.014, 0.16, 12), deskWoodMat);
+      standLeg.position.set(Math.cos(legAng) * 0.18, 0.08, Math.sin(legAng) * 0.18);
+      standLeg.castShadow = true;
+      potStandGroup.add(standLeg);
+    }
+    largeTreeGroup.add(potStandGroup);
+
+    // Chậu sứ phong cách Bắc Âu tối giản
+    const potMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.25,
+      metalness: 0.05,
+    });
+    const potBody = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.42, 24), potMat);
+    potBody.position.set(0, 0.29, 0);
+    potBody.castShadow = true;
+    potBody.receiveShadow = true;
+    largeTreeGroup.add(potBody);
+
+    // Lớp đất hữu cơ sẫm màu
+    const soilMat = new THREE.MeshStandardMaterial({ color: 0x271c19, roughness: 0.95 });
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 20), soilMat);
+    soil.position.set(0, 0.49, 0);
+    largeTreeGroup.add(soil);
+
+    // Thân cây & các cành lá Monstera xum xuê đung đưa
+    const leafMatDark = new THREE.MeshStandardMaterial({
+      color: 0x166534,
+      roughness: 0.35,
+      side: THREE.DoubleSide,
+    });
+    const leafMatLight = new THREE.MeshStandardMaterial({
+      color: 0x22c55e,
+      roughness: 0.35,
+      side: THREE.DoubleSide,
+    });
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.5 });
+
+    // Tạo 7 cành lá tỏa ra các hướng với góc nghiêng và độ cao khác nhau
+    const branchConfigs = [
+      { angle: 0.2, pitch: 0.55, length: 0.75, leafScale: 1.05, height: 0.5, mat: leafMatDark },
+      { angle: 1.1, pitch: 0.48, length: 0.85, leafScale: 1.2, height: 0.52, mat: leafMatLight },
+      { angle: 2.0, pitch: 0.62, length: 0.7, leafScale: 0.95, height: 0.51, mat: leafMatDark },
+      { angle: 2.9, pitch: 0.5, length: 0.9, leafScale: 1.25, height: 0.54, mat: leafMatLight },
+      { angle: 3.8, pitch: 0.58, length: 0.8, leafScale: 1.1, height: 0.52, mat: leafMatDark },
+      { angle: 4.8, pitch: 0.45, length: 0.95, leafScale: 1.3, height: 0.55, mat: leafMatLight },
+      { angle: 5.6, pitch: 0.6, length: 0.72, leafScale: 1.0, height: 0.5, mat: leafMatDark },
+    ];
+
+    branchConfigs.forEach((cfg, idx) => {
+      const branchGroup = new THREE.Group();
+      branchGroup.position.set(0, cfg.height, 0);
+      branchGroup.rotation.y = cfg.angle;
+
+      const subPivot = new THREE.Group();
+      subPivot.rotation.z = cfg.pitch;
+
+      // Thân cành thon dần
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.015, cfg.length, 10),
+        stemMat
+      );
+      stem.position.set(0, cfg.length / 2, 0);
+      stem.castShadow = true;
+      subPivot.add(stem);
+
+      // Lá Monstera hình quạt trái tim mềm mại
+      const leafGroup = new THREE.Group();
+      leafGroup.position.set(0, cfg.length, 0);
+      leafGroup.rotation.z = 0.35;
+
+      const leafCenter = new THREE.Mesh(
+        new THREE.BoxGeometry(0.008, 0.28 * cfg.leafScale, 0.008),
+        stemMat
+      );
+      leafCenter.position.set(0, (0.14 * cfg.leafScale), 0);
+      leafGroup.add(leafCenter);
+
+      // Mặt lá xòe cánh đôi
+      const leafWingGeo = new THREE.ConeGeometry(0.12 * cfg.leafScale, 0.32 * cfg.leafScale, 16);
+      leafWingGeo.scale(1.3, 1, 0.12);
+      const leafMesh = new THREE.Mesh(leafWingGeo, cfg.mat);
+      leafMesh.position.set(0, 0.16 * cfg.leafScale, 0);
+      leafMesh.castShadow = true;
+      leafGroup.add(leafMesh);
+
+      subPivot.add(leafGroup);
+      branchGroup.add(subPivot);
+      largeTreeGroup.add(branchGroup);
+
+      // Đưa vào danh sách hoạt họa với độ lệch pha khác nhau
+      animatedTreeBranches.push({
+        group: subPivot,
+        baseRotX: subPivot.rotation.x,
+        baseRotZ: subPivot.rotation.z,
+        phase: idx * 0.9,
+        speed: 1.2 + (idx % 3) * 0.25,
+        amp: 0.045 + (idx % 2) * 0.02,
+      });
+    });
+
+    roomGroup.add(largeTreeGroup);
+
+    // 2. Chậu cây leo bậu cửa sổ (Window sill hanging ivy)
+    const windowPlantGroup = new THREE.Group();
+    windowPlantGroup.position.set(0.15, 1.04, -2.14);
+
+    const winPot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.038, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.6 })
+    );
+    windowPlantGroup.add(winPot);
+
+    // Dây leo buông rủ đung đưa nhẹ theo làn gió cửa sổ
+    for (let v = 0; v < 3; v++) {
+      const vineGroup = new THREE.Group();
+      vineGroup.position.set(-0.02 + v * 0.025, 0.02, 0.04);
+
+      const vineLength = 0.22 + v * 0.08;
+      for (let s = 0; s < 5; s++) {
+        const leafBud = new THREE.Mesh(
+          new THREE.SphereGeometry(0.014, 8, 8),
+          leafMatLight
+        );
+        leafBud.scale.set(1.4, 0.8, 0.6);
+        leafBud.position.set((s % 2 === 0 ? 0.012 : -0.012), -s * (vineLength / 5), 0.005);
+        vineGroup.add(leafBud);
+      }
+
+      windowPlantGroup.add(vineGroup);
+      animatedVines.push({
+        group: vineGroup,
+        baseRotZ: 0,
+        phase: v * 1.3,
+      });
+    }
+    roomGroup.add(windowPlantGroup);
+
+    // ==========================================
+    // E. HỒ CÁ CẢNH THỦY SINH VỚI CÁ BƠI LỘI & BỌT KHÍ OXY (ILLUMINATED AQUARIUM)
+    // ==========================================
+    const aquariumRoot = new THREE.Group();
+    aquariumRoot.position.set(-1.68, 0, 0.55);
+
+    // 1. Tủ đỡ hồ cá bằng gỗ phong cách hiện đại (Modern Aquarium Cabinet)
+    const cabinetMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b, // Gỗ màu than đen sang trọng đồng bộ với góc làm việc
+      roughness: 0.35,
+      metalness: 0.2,
+    });
+    const cabinetBody = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.68, 0.44), cabinetMat);
+    cabinetBody.position.set(0, 0.38, 0);
+    cabinetBody.castShadow = true;
+    cabinetBody.receiveShadow = true;
+    aquariumRoot.add(cabinetBody);
+
+    // Mặt tủ trên viền gỗ sáng
+    const cabinetTopTrim = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.025, 0.46), deskWoodMat);
+    cabinetTopTrim.position.set(0, 0.725, 0);
+    cabinetTopTrim.castShadow = true;
+    aquariumRoot.add(cabinetTopTrim);
+
+    // 4 chân kim loại mạ chrome
+    const cabLegCoords = [
+      [-0.38, -0.17],
+      [0.38, -0.17],
+      [-0.38, 0.17],
+      [0.38, 0.17],
+    ];
+    cabLegCoords.forEach(([cx, cz]) => {
+      const cLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.014, 0.08, 12), chromeMat);
+      cLeg.position.set(cx, 0.04, cz);
+      cLeg.castShadow = true;
+      aquariumRoot.add(cLeg);
+    });
+
+    // Cánh tủ với 2 tay nắm kim loại thanh mảnh
+    for (let d = -1; d <= 1; d += 2) {
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.14, 10), chromeMat);
+      handle.position.set(d * 0.06, 0.42, 0.225);
+      aquariumRoot.add(handle);
+    }
+
+    // 2. Bể kính trong suốt không viền (Rimless Glass Tank)
+    const tankGroup = new THREE.Group();
+    tankGroup.position.set(0, 0.95, 0);
+
+    const glassTankMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.92,
+      opacity: 0.3,
+      transparent: true,
+      roughness: 0.05,
+      metalness: 0.1,
+      ior: 1.5,
+    });
+    const tankOuter = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.42, 0.38), glassTankMat);
+    tankOuter.castShadow = true;
+    tankGroup.add(tankOuter);
+
+    // Khối nước bên trong màu xanh ngọc lam trong vắt
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x06b6d4,
+      transparent: true,
+      opacity: 0.38,
+      roughness: 0.1,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.2,
+    });
+    const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.36, 0.34), waterMat);
+    waterMesh.position.set(0, -0.015, 0);
+    tankGroup.add(waterMesh);
+
+    // Lớp cát trắng mịn dưới đáy hồ (White Sand Substrate)
+    const sandMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.74, 0.025, 0.34),
+      new THREE.MeshStandardMaterial({ color: 0xf5eedc, roughness: 0.95 })
+    );
+    sandMesh.position.set(0, -0.19, 0);
+    sandMesh.receiveShadow = true;
+    tankGroup.add(sandMesh);
+
+    // Những viên đá cuội & lũa thủy sinh decor (Aquascaping Rocks & Driftwood)
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+    const rock1 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.045), rockMat);
+    rock1.position.set(-0.24, -0.155, -0.06);
+    rock1.rotation.set(0.3, 0.6, 0.2);
+    tankGroup.add(rock1);
+
+    const rock2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.035), rockMat);
+    rock2.position.set(-0.18, -0.165, 0.05);
+    tankGroup.add(rock2);
+
+    const rock3 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.05), rockMat);
+    rock3.position.set(0.22, -0.15, -0.04);
+    tankGroup.add(rock3);
+
+    // Thân gỗ lũa uốn cong nghệ thuật
+    const woodDrift = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.02, 0.24, 8),
+      new THREE.MeshStandardMaterial({ color: 0x3f2e21, roughness: 0.9 })
+    );
+    woodDrift.rotation.set(0.4, 0.3, 1.1);
+    woodDrift.position.set(-0.14, -0.12, -0.04);
+    tankGroup.add(woodDrift);
+
+    // Cây rong rêu thủy sinh mềm mại đung đưa trong nước (Waving Seaweeds)
+    const animatedSeaweeds: {
+      group: THREE.Group;
+      speed: number;
+      phase: number;
+      amp: number;
+    }[] = [];
+
+    const seaweedMat1 = new THREE.MeshStandardMaterial({
+      color: 0x10b981,
+      roughness: 0.4,
+      side: THREE.DoubleSide,
+    });
+    const seaweedMat2 = new THREE.MeshStandardMaterial({
+      color: 0x059669,
+      roughness: 0.4,
+      side: THREE.DoubleSide,
+    });
+
+    const plantAnchors = [
+      { x: -0.22, z: -0.08, blades: 5, h: 0.22, mat: seaweedMat1 },
+      { x: 0.2, z: 0.06, blades: 6, h: 0.25, mat: seaweedMat2 },
+      { x: 0.02, z: -0.09, blades: 4, h: 0.18, mat: seaweedMat1 },
+    ];
+
+    plantAnchors.forEach((pa, cIdx) => {
+      const clump = new THREE.Group();
+      clump.position.set(pa.x, -0.18, pa.z);
+
+      for (let b = 0; b < pa.blades; b++) {
+        const bladeGeo = new THREE.PlaneGeometry(0.018, pa.h);
+        bladeGeo.translate(0, pa.h / 2, 0);
+        const blade = new THREE.Mesh(bladeGeo, pa.mat);
+        blade.rotation.y = (b * Math.PI) / pa.blades;
+        blade.rotation.x = 0.08 * (b - 2);
+        clump.add(blade);
+      }
+
+      tankGroup.add(clump);
+      animatedSeaweeds.push({
+        group: clump,
+        speed: 2.2 + cIdx * 0.4,
+        phase: cIdx * 1.5,
+        amp: 0.12,
+      });
+    });
+
+    // Hệ thống sủi bọt khí oxy sinh động (Air Stone & Bubbles)
+    const bubbler = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.016, 0.016, 0.015, 12),
+      new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 })
+    );
+    bubbler.position.set(0.24, -0.17, -0.08);
+    tankGroup.add(bubbler);
+
+    const bubbleMat = new THREE.MeshStandardMaterial({
+      color: 0xf0fdf4,
+      roughness: 0.1,
+      metalness: 0.3,
+      transparent: true,
+      opacity: 0.8,
+    });
+
+    const animatedBubbles: {
+      mesh: THREE.Mesh;
+      speed: number;
+      minY: number;
+      maxY: number;
+      baseX: number;
+      baseZ: number;
+      phase: number;
+    }[] = [];
+
+    for (let b = 0; b < 7; b++) {
+      const bSize = 0.005 + (b % 3) * 0.003;
+      const bubble = new THREE.Mesh(new THREE.SphereGeometry(bSize, 8, 8), bubbleMat);
+      const startY = -0.16 + (b / 7) * 0.32;
+      bubble.position.set(0.24, startY, -0.08);
+      tankGroup.add(bubble);
+
+      animatedBubbles.push({
+        mesh: bubble,
+        speed: 0.14 + (b % 3) * 0.04,
+        minY: -0.16,
+        maxY: 0.16,
+        baseX: 0.24,
+        baseZ: -0.08,
+        phase: b * 0.8,
+      });
+    }
+
+    // Đèn LED chiếu sáng hồ cá trên nắp (Slim LED Light Bar & Cyan Ambient Glow)
+    const lightBar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 0.02, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 })
+    );
+    lightBar.position.set(0, 0.22, 0);
+    tankGroup.add(lightBar);
+
+    const ledGlowStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.72, 0.005, 0.03),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+    );
+    ledGlowStrip.position.set(0, 0.208, 0);
+    tankGroup.add(ledGlowStrip);
+
+    // Ánh sáng xanh ngọc lung linh tỏa ra xung quanh góc phòng
+    const aquaLight = new THREE.PointLight(0x38bdf8, 1.8, 2.5);
+    aquaLight.position.set(0, 0.05, 0);
+    tankGroup.add(aquaLight);
+
+    // 3. ĐÀN CÁ BƠI LỘI SINH ĐỘNG (ANIMATED SWIMMING FISH)
+    const animatedFishList: {
+      group: THREE.Group;
+      tailGroup: THREE.Group;
+      speed: number;
+      radiusX: number;
+      radiusZ: number;
+      radiusY: number;
+      offsetPhase: number;
+      baseY: number;
+      tailSpeed: number;
+    }[] = [];
+
+    // Helper tạo một chú cá với cấu tạo thân hình thoi và vây đuôi có thể uốn lượn
+    const createFish = (
+      bodyColor: number,
+      tailColor: number,
+      accentColor: number,
+      scale = 1.0
+    ) => {
+      const fishRoot = new THREE.Group();
+
+      // Thân cá thuôn nhọn theo trục Z (mũi hướng về +Z, đuôi ở -Z)
+      const bodyGeo = new THREE.SphereGeometry(0.028 * scale, 12, 10);
+      bodyGeo.scale(0.5, 0.8, 1.8);
+      const fishMat = new THREE.MeshStandardMaterial({
+        color: bodyColor,
+        roughness: 0.2,
+        metalness: 0.3,
+      });
+      const fishBody = new THREE.Mesh(bodyGeo, fishMat);
+      fishRoot.add(fishBody);
+
+      // Sọc neon hoặc bụng cá lấp lánh
+      const stripeGeo = new THREE.BoxGeometry(0.006 * scale, 0.015 * scale, 0.07 * scale);
+      const stripeMat = new THREE.MeshBasicMaterial({ color: accentColor });
+      const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+      stripe.position.set(0, 0.005 * scale, 0);
+      fishRoot.add(stripe);
+
+      // Hai mắt cá tròn đáng yêu
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+      const eyeGeo = new THREE.SphereGeometry(0.004 * scale, 8, 8);
+      const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeL.position.set(0.014 * scale, 0.008 * scale, 0.032 * scale);
+      fishRoot.add(eyeL);
+
+      const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeR.position.set(-0.014 * scale, 0.008 * scale, 0.032 * scale);
+      fishRoot.add(eyeR);
+
+      // Vây lưng cá (Dorsal Fin)
+      const dorsalFin = new THREE.Mesh(
+        new THREE.BoxGeometry(0.003 * scale, 0.025 * scale, 0.035 * scale),
+        new THREE.MeshStandardMaterial({
+          color: tailColor,
+          transparent: true,
+          opacity: 0.85,
+        })
+      );
+      dorsalFin.position.set(0, 0.028 * scale, -0.01 * scale);
+      fishRoot.add(dorsalFin);
+
+      // Khớp vây đuôi riêng biệt để uốn lượn khi bơi
+      const tailPivot = new THREE.Group();
+      tailPivot.position.set(0, 0, -0.045 * scale);
+
+      const finGeo = new THREE.ConeGeometry(0.025 * scale, 0.065 * scale, 8);
+      finGeo.scale(0.12, 1, 1);
+      finGeo.rotateX(-Math.PI / 2);
+      const caudalFin = new THREE.Mesh(
+        finGeo,
+        new THREE.MeshStandardMaterial({
+          color: tailColor,
+          transparent: true,
+          opacity: 0.88,
+          side: THREE.DoubleSide,
+        })
+      );
+      caudalFin.position.set(0, 0, -0.03 * scale);
+      tailPivot.add(caudalFin);
+      fishRoot.add(tailPivot);
+
+      return { fishRoot, tailPivot };
+    };
+
+    // Cá số 1: Cá Koi mini vàng cam rực rỡ
+    const fish1Data = createFish(0xf97316, 0xfdba74, 0xffffff, 1.15);
+    tankGroup.add(fish1Data.fishRoot);
+    animatedFishList.push({
+      group: fish1Data.fishRoot,
+      tailGroup: fish1Data.tailPivot,
+      speed: 0.75,
+      radiusX: 0.26,
+      radiusZ: 0.1,
+      radiusY: 0.05,
+      offsetPhase: 0,
+      baseY: 0.02,
+      tailSpeed: 9.5,
+    });
+
+    // Cá số 2: Cá Neon Tetra phát sáng xanh ngọc & đuôi đỏ thắm
+    const fish2Data = createFish(0x0284c7, 0xef4444, 0x38bdf8, 0.85);
+    tankGroup.add(fish2Data.fishRoot);
+    animatedFishList.push({
+      group: fish2Data.fishRoot,
+      tailGroup: fish2Data.tailPivot,
+      speed: 0.95,
+      radiusX: 0.24,
+      radiusZ: 0.11,
+      radiusY: 0.06,
+      offsetPhase: 2.4,
+      baseY: -0.05,
+      tailSpeed: 12.0,
+    });
+
+    // Cá số 3: Cá Bảy Màu (Guppy) vàng hoàng kim uyển chuyển
+    const fish3Data = createFish(0xeab308, 0xf59e0b, 0xfef08a, 0.95);
+    tankGroup.add(fish3Data.fishRoot);
+    animatedFishList.push({
+      group: fish3Data.fishRoot,
+      tailGroup: fish3Data.tailPivot,
+      speed: 0.65,
+      radiusX: 0.22,
+      radiusZ: 0.08,
+      radiusY: 0.04,
+      offsetPhase: 4.6,
+      baseY: 0.07,
+      tailSpeed: 8.5,
+    });
+
+    aquariumRoot.add(tankGroup);
+    roomGroup.add(aquariumRoot);
+
+    // ==========================================
+    // 8. RENDER LOOP WITH ORBIT CONTROLS & ANIMATIONS
     // ==========================================
     let animationFrameId: number;
     const clock = new THREE.Clock();
@@ -988,10 +1509,64 @@ export const ThreeRoom: React.FC<ThreeRoomProps> = ({
       const delta = clock.getDelta();
       const elapsedTime = clock.getElapsedTime();
 
-      // Gentle soothing idle breathing swivel oscillation for the chair
+      // 1. Dao động ghế xoay thư giãn
       if (chairSwivelGroupRef.current) {
         chairSwivelGroupRef.current.rotation.y = Math.sin(elapsedTime * 0.8) * 0.18;
       }
+
+      // 2. Hoạt họa cành lá cây Monstera lớn đung đưa nhịp nhàng
+      animatedTreeBranches.forEach((br) => {
+        br.group.rotation.x =
+          br.baseRotX + Math.sin(elapsedTime * br.speed + br.phase) * br.amp;
+        br.group.rotation.z =
+          br.baseRotZ + Math.cos(elapsedTime * (br.speed * 0.85) + br.phase) * br.amp;
+      });
+
+      // 3. Hoạt họa dây leo bậu cửa sổ đung đưa theo gió
+      animatedVines.forEach((v) => {
+        v.group.rotation.z =
+          v.baseRotZ + Math.sin(elapsedTime * 1.5 + v.phase) * 0.08;
+      });
+
+      // 4. Hoạt họa cây rong rêu thủy sinh trong hồ cá
+      animatedSeaweeds.forEach((sw) => {
+        sw.group.rotation.z =
+          Math.sin(elapsedTime * sw.speed + sw.phase) * sw.amp;
+        sw.group.rotation.x =
+          Math.cos(elapsedTime * (sw.speed * 0.7) + sw.phase) * (sw.amp * 0.6);
+      });
+
+      // 5. Hoạt họa bọt khí oxy nổi lên liên tục
+      animatedBubbles.forEach((b) => {
+        b.mesh.position.y += b.speed * delta;
+        b.mesh.position.x = b.baseX + Math.sin(elapsedTime * 3.5 + b.phase) * 0.006;
+        b.mesh.position.z = b.baseZ + Math.cos(elapsedTime * 3.0 + b.phase) * 0.006;
+        if (b.mesh.position.y > b.maxY) {
+          b.mesh.position.y = b.minY;
+        }
+      });
+
+      // 6. Hoạt họa cá bơi lội 3D và vẫy đuôi tự nhiên
+      animatedFishList.forEach((fish) => {
+        const t = elapsedTime * fish.speed + fish.offsetPhase;
+        const currX = Math.sin(t) * fish.radiusX;
+        const currZ = Math.cos(t * 1.25) * fish.radiusZ;
+        const currY = fish.baseY + Math.sin(t * 1.7) * fish.radiusY;
+
+        // Điểm tiếp theo để định hướng góc nhìn bơi
+        const dt = 0.06;
+        const nextT = t + dt * fish.speed;
+        const nextX = Math.sin(nextT) * fish.radiusX;
+        const nextZ = Math.cos(nextT * 1.25) * fish.radiusZ;
+        const nextY = fish.baseY + Math.sin(nextT * 1.7) * fish.radiusY;
+
+        fish.group.position.set(currX, currY, currZ);
+        fish.group.lookAt(nextX, nextY, nextZ);
+
+        // Vẫy đuôi cá theo nhịp
+        fish.tailGroup.rotation.y =
+          Math.sin(elapsedTime * fish.tailSpeed + fish.offsetPhase) * 0.45;
+      });
 
       // Smooth camera interpolation towards target
       if (isAnimatingFocus.current && cameraRef.current && controlsRef.current) {
